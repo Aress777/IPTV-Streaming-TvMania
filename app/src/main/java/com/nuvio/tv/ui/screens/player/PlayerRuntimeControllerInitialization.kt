@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val STARTUP_SUBTITLE_PREFETCH_TIMEOUT_MS = 20_000L
+private const val STARTUP_SUBTITLE_FAST_PATH_TIMEOUT_MS = 1_500L
 private const val MPV_AFR_SETTLE_DELAY_MS = 2_000L
 
 internal data class StartupSubtitlePreparation(
@@ -58,16 +59,16 @@ internal data class StartupSubtitlePreparation(
     val fetchCompleted: Boolean
 )
 
-private suspend fun PlayerRuntimeController.resolveCurrentStreamMimeType(
+internal suspend fun PlayerRuntimeController.probeCurrentStreamMimeType(
     url: String,
     headers: Map<String, String>
-) {
+): String? {
     currentStreamMimeType?.let { resolvedMimeType ->
         Log.d(
             PlayerRuntimeController.TAG,
             "Resolved stream mimeType=$resolvedMimeType for url=$url"
         )
-        return
+        return resolvedMimeType
     }
     currentStreamMimeType = PlayerMediaSourceFactory.probeMimeType(
         url = url,
@@ -79,6 +80,7 @@ private suspend fun PlayerRuntimeController.resolveCurrentStreamMimeType(
         PlayerRuntimeController.TAG,
         "Resolved stream mimeType=${currentStreamMimeType ?: "unknown"} for url=$url"
     )
+    return currentStreamMimeType
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -152,7 +154,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                     resizeMode = playerSettings.resizeMode,
                     aspectMode = deviceAspectMode,
                     tunnelingEnabled = playerSettings.tunnelingEnabled,
-                    loadingMessage = if (showLoadingStatus) context.getString(R.string.player_loading_detecting_format) else null
+                    loadingMessage = if (showLoadingStatus) context.getString(R.string.player_loading_preparing) else null
                 )
             }
             val afrJob = async {
@@ -187,10 +189,6 @@ internal fun PlayerRuntimeController.initializePlayer(
                 }
                 return@launch
             }
-            resolveCurrentStreamMimeType(
-                url = url,
-                headers = headers
-            )
             mpvInitializationInProgress = false
             val startupSubtitlePreparation = prepareStreamStartSubtitles(playerSettings, showLoadingStatus)
             afrJob.await()
@@ -352,21 +350,19 @@ internal fun PlayerRuntimeController.initializePlayer(
                 applySubtitlePreferences(preferred, secondary)
                 applyStartupSubtitlePreparation(startupSubtitlePreparation)
                 val startupSubtitleConfigurations = buildStartupSubtitleConfigurations(startupSubtitlePreparation)
-                setMediaSource(
-                    mediaSourceFactory.createMediaSource(
-                        context = context,
-                        url = url,
-                        headers = headers,
-                        subtitleConfigurations = startupSubtitleConfigurations,
-                        filename = currentFilename,
-                        responseHeaders = currentStreamResponseHeaders,
-                        mimeTypeOverride = currentStreamMimeType,
-                        audioDelayUsProvider = audioDelayUs::get
-                    )
+                val mediaSource = mediaSourceFactory.createMediaSource(
+                    context = context,
+                    url = url,
+                    headers = headers,
+                    subtitleConfigurations = startupSubtitleConfigurations,
+                    filename = currentFilename,
+                    responseHeaders = currentStreamResponseHeaders,
+                    mimeTypeOverride = currentStreamMimeType,
+                    audioDelayUsProvider = audioDelayUs::get
                 )
+                setMediaSource(mediaSource)
                 if (showLoadingStatus) _uiState.update { it.copy(loadingMessage = context.getString(R.string.player_loading_starting)) }
                 playWhenReady = !startPaused
-                prepare()
 
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -529,6 +525,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         }
                     }
                 })
+                prepare()
             }
             if (!startupSubtitlePreparation.fetchCompleted) {
                 fetchAddonSubtitles()
@@ -657,8 +654,15 @@ internal suspend fun PlayerRuntimeController.prepareStartupSubtitles(
 
     _uiState.update { it.copy(isLoadingAddonSubtitles = true, addonSubtitlesError = null) }
 
-    val fetchedSubtitles = withTimeoutOrNull(STARTUP_SUBTITLE_PREFETCH_TIMEOUT_MS) {
+    val startupSubtitleTimeoutMs = if (mode == AddonSubtitleStartupMode.ALL_SUBTITLES) {
+        STARTUP_SUBTITLE_FAST_PATH_TIMEOUT_MS
+    } else {
+        STARTUP_SUBTITLE_PREFETCH_TIMEOUT_MS
+    }
+
+    val fetchedSubtitles = withTimeoutOrNull(startupSubtitleTimeoutMs) {
         fetchAddonSubtitlesNow(
+            computeHashIfMissing = false,
             onProgress = if (showLoadingStatus) { completed, total, addonName ->
                 val msg = if (completed == 0) {
                     context.getString(R.string.player_loading_subtitles_from, total)
@@ -972,4 +976,3 @@ private class SubtitleOffsetRenderer(
         super.render(adjustedPositionUs, elapsedRealtimeUs)
     }
 }
-

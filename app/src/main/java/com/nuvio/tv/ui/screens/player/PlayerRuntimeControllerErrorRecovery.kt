@@ -6,6 +6,7 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import com.nuvio.tv.R
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -37,6 +38,9 @@ internal fun PlayerRuntimeController.attemptStartupRecovery(
     val paused = userPausedManually
     val attempt = startupRetryCount
     startupRetryCount++
+    val shouldProbeMimeType = attempt == 0 &&
+        currentStreamMimeType == null &&
+        error.shouldProbeMimeTypeOnStartup()
 
     Log.w(
         PlayerRuntimeController.TAG,
@@ -50,17 +54,47 @@ internal fun PlayerRuntimeController.attemptStartupRecovery(
                 error = null,
                 isBuffering = true,
                 showLoadingOverlay = it.loadingOverlayEnabled,
-                loadingMessage = context.getString(R.string.player_loading_buffering),
+                loadingMessage = context.getString(
+                    if (shouldProbeMimeType) {
+                        R.string.player_loading_detecting_format
+                    } else {
+                        R.string.player_loading_buffering
+                    }
+                ),
                 showPauseOverlay = false
             )
         }
 
+        val mimeProbe = if (shouldProbeMimeType) {
+            async {
+                runCatching {
+                    probeCurrentStreamMimeType(currentStreamUrl, currentHeaders)
+                }.getOrNull()
+            }
+        } else {
+            null
+        }
+
         delay(RETRY_DELAY_MS)
+        mimeProbe?.await()
 
         releasePlayer(flushPlaybackState = false)
         initializePlayer(currentStreamUrl, currentHeaders, startPaused = paused)
     }
     return true
+}
+
+private fun PlaybackException.shouldProbeMimeTypeOnStartup(): Boolean {
+    if (findCauseOfType<androidx.media3.exoplayer.source.UnrecognizedInputFormatException>() != null) {
+        return true
+    }
+    return when (errorCode) {
+        PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+        PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED,
+        PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
+        PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED -> true
+        else -> false
+    }
 }
 
 /**
@@ -371,4 +405,3 @@ internal fun PlayerRuntimeController.tryDv7HevcFallback(
     }
     return true
 }
-
