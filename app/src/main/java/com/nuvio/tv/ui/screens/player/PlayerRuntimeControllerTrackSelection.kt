@@ -357,6 +357,10 @@ internal fun PlayerRuntimeController.addonSubtitleKey(subtitle: Subtitle): Strin
     return "${subtitle.id}|${subtitle.url}"
 }
 
+internal fun PlayerRuntimeController.isAddonSubtitleAutoSelectable(subtitle: Subtitle): Boolean {
+    return isUsingMpvEngine() || attachedAddonSubtitleKeys.contains(addonSubtitleKey(subtitle))
+}
+
 internal fun PlayerRuntimeController.toSubtitleConfiguration(subtitle: Subtitle): MediaItem.SubtitleConfiguration {
     val normalizedLang = PlayerSubtitleUtils.normalizeLanguageCode(subtitle.lang)
     val subtitleMimeType = PlayerSubtitleUtils.mimeTypeFromUrl(subtitle.url)
