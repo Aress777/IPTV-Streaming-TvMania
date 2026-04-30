@@ -30,6 +30,8 @@ internal fun PlayerRuntimeController.buildSubtitleFetchRequest(): SubtitleFetchR
 
 internal suspend fun PlayerRuntimeController.fetchAddonSubtitlesNow(
     computeHashIfMissing: Boolean = true,
+    firstAvailableOnly: Boolean = false,
+    firstSubtitleFilter: ((Subtitle) -> Boolean)? = null,
     onProgress: ((completed: Int, total: Int, addonName: String?) -> Unit)? = null
 ): List<Subtitle> {
     val request = buildSubtitleFetchRequest() ?: return emptyList()
@@ -83,18 +85,33 @@ internal suspend fun PlayerRuntimeController.fetchAddonSubtitlesNow(
         }
     }
 
-    return subtitleRepository.getSubtitles(
-        type = request.type,
-        id = request.id,
-        videoId = request.videoId,
-        videoHash = currentVideoHash,
-        videoSize = currentVideoSize,
-        filename = currentFilename,
-        onProgress = onProgress
-    )
+    return if (firstAvailableOnly) {
+        subtitleRepository.getFirstSubtitles(
+            type = request.type,
+            id = request.id,
+            videoId = request.videoId,
+            videoHash = currentVideoHash,
+            videoSize = currentVideoSize,
+            filename = currentFilename,
+            onProgress = onProgress,
+            acceptSubtitle = firstSubtitleFilter
+        )
+    } else {
+        subtitleRepository.getSubtitles(
+            type = request.type,
+            id = request.id,
+            videoId = request.videoId,
+            videoHash = currentVideoHash,
+            videoSize = currentVideoSize,
+            filename = currentFilename,
+            onProgress = onProgress
+        )
+    }
 }
 
-internal fun PlayerRuntimeController.fetchAddonSubtitles() {
+internal fun PlayerRuntimeController.fetchAddonSubtitles(
+    autoApplyAfterFetch: Boolean = true
+) {
     if (buildSubtitleFetchRequest() == null) return
     
     scope.launch {
@@ -108,6 +125,9 @@ internal fun PlayerRuntimeController.fetchAddonSubtitles() {
                     addonSubtitles = subtitles,
                     isLoadingAddonSubtitles = false
                 ) 
+            }
+            if (!autoApplyAfterFetch) {
+                return@launch
             }
             val pendingAddon = pendingRestoredAddonSubtitle
             if (pendingAddon != null) {

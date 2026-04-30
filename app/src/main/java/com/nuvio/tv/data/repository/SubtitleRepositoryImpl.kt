@@ -9,10 +9,12 @@ import com.nuvio.tv.domain.model.Addon
 import com.nuvio.tv.domain.model.Subtitle
 import com.nuvio.tv.domain.repository.SubtitleRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
@@ -40,23 +42,7 @@ class SubtitleRepositoryImpl @Inject constructor(
         val requestType = canonicalSubtitleType(type)
         val startedAtMs = System.currentTimeMillis()
         Log.d(TAG, "Fetching subtitles for type=$requestType, id=$id, videoId=$videoId")
-        
-        // Get installed addons
-        val addons = try {
-            addonRepository.getInstalledAddons().first()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to get installed addons", e)
-            return@withContext emptyList()
-        }
-
-     
-        
-        // Filter addons that support subtitles resource
-        val subtitleAddons = addons.filter { addon ->
-            addon.resources.any { resource ->
-                isSubtitleResource(resource.name) && supportsType(resource, requestType, id)
-            }
-        }
+        val subtitleAddons = getSubtitleAddons(requestType, id) ?: return@withContext emptyList()
         
         Log.d(TAG, "Found ${subtitleAddons.size} subtitle addons: ${subtitleAddons.map { it.name }}")
 
@@ -64,40 +50,196 @@ class SubtitleRepositoryImpl @Inject constructor(
             return@withContext emptyList()
         }
 
-        val total = subtitleAddons.size
-        val completedCount = AtomicInteger(0)
-        onProgress?.invoke(0, total, null)
-
-        // Fetch subtitles from all addons in parallel
-        val result = coroutineScope {
-            subtitleAddons.map { addon ->
-                async {
-                    val addonStartMs = System.currentTimeMillis()
-                    val subtitles = withTimeoutOrNull(PER_ADDON_TIMEOUT_MS) {
-                        fetchSubtitlesFromAddon(addon, type, id, videoId, videoHash, videoSize, filename)
-                    }
-                    onProgress?.invoke(completedCount.incrementAndGet(), total, addon.displayName)
-                    if (subtitles == null) {
-                        Log.w(
-                            TAG,
-                            "Subtitle fetch timed out for addon=${addon.name} after ${PER_ADDON_TIMEOUT_MS}ms"
-                        )
-                        emptyList()
-                    } else {
-                        Log.d(
-                            TAG,
-                            "Subtitle fetch done for addon=${addon.name} count=${subtitles.size} in ${System.currentTimeMillis() - addonStartMs}ms"
-                        )
-                        subtitles
-                    }
-                }
-            }.awaitAll().flatten()
-        }
+        val result = fetchAllAddonSubtitles(
+            addons = subtitleAddons,
+            type = type,
+            id = id,
+            videoId = videoId,
+            videoHash = videoHash,
+            videoSize = videoSize,
+            filename = filename,
+            onProgress = onProgress
+        )
         Log.d(
             TAG,
             "Subtitle fetch completed total=${result.size} fromAddons=${subtitleAddons.size} in ${System.currentTimeMillis() - startedAtMs}ms"
         )
         result
+    }
+
+    override suspend fun getFirstSubtitles(
+        type: String,
+        id: String,
+        videoId: String?,
+        videoHash: String?,
+        videoSize: Long?,
+        filename: String?,
+        onProgress: ((completed: Int, total: Int, addonName: String?) -> Unit)?,
+        acceptSubtitle: ((Subtitle) -> Boolean)?
+    ): List<Subtitle> = withContext(Dispatchers.IO) {
+        val requestType = canonicalSubtitleType(type)
+        val startedAtMs = System.currentTimeMillis()
+        Log.d(TAG, "Fetching first subtitles for type=$requestType, id=$id, videoId=$videoId")
+        val subtitleAddons = getSubtitleAddons(requestType, id) ?: return@withContext emptyList()
+
+        Log.d(TAG, "Found ${subtitleAddons.size} subtitle addons: ${subtitleAddons.map { it.name }}")
+
+        if (subtitleAddons.isEmpty()) {
+            return@withContext emptyList()
+        }
+
+        val result = fetchFirstAddonSubtitles(
+            addons = subtitleAddons,
+            type = type,
+            id = id,
+            videoId = videoId,
+            videoHash = videoHash,
+            videoSize = videoSize,
+            filename = filename,
+            onProgress = onProgress,
+            acceptSubtitle = acceptSubtitle
+        )
+        Log.d(
+            TAG,
+            "First subtitle fetch completed total=${result.size} fromAddons=${subtitleAddons.size} in ${System.currentTimeMillis() - startedAtMs}ms"
+        )
+        result
+    }
+
+    private suspend fun getSubtitleAddons(
+        requestType: String,
+        id: String
+    ): List<Addon>? {
+        val addons = try {
+            addonRepository.getInstalledAddons().first()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get installed addons", e)
+            return null
+        }
+
+        return addons.filter { addon ->
+            addon.resources.any { resource ->
+                isSubtitleResource(resource.name) && supportsType(resource, requestType, id)
+            }
+        }
+    }
+
+    private suspend fun fetchAllAddonSubtitles(
+        addons: List<Addon>,
+        type: String,
+        id: String,
+        videoId: String?,
+        videoHash: String?,
+        videoSize: Long?,
+        filename: String?,
+        onProgress: ((completed: Int, total: Int, addonName: String?) -> Unit)?
+    ): List<Subtitle> {
+        val total = addons.size
+        val completedCount = AtomicInteger(0)
+        onProgress?.invoke(0, total, null)
+
+        return coroutineScope {
+            addons.map { addon ->
+                async {
+                    fetchAddonWithProgress(
+                        addon = addon,
+                        type = type,
+                        id = id,
+                        videoId = videoId,
+                        videoHash = videoHash,
+                        videoSize = videoSize,
+                        filename = filename,
+                        completedCount = completedCount,
+                        total = total,
+                        onProgress = onProgress
+                    )
+                }
+            }.awaitAll().flatten()
+        }
+    }
+
+    private suspend fun fetchFirstAddonSubtitles(
+        addons: List<Addon>,
+        type: String,
+        id: String,
+        videoId: String?,
+        videoHash: String?,
+        videoSize: Long?,
+        filename: String?,
+        onProgress: ((completed: Int, total: Int, addonName: String?) -> Unit)?,
+        acceptSubtitle: ((Subtitle) -> Boolean)?
+    ): List<Subtitle> = coroutineScope {
+        val total = addons.size
+        val completedCount = AtomicInteger(0)
+        onProgress?.invoke(0, total, null)
+
+        val pending = addons.map { addon ->
+            async {
+                fetchAddonWithProgress(
+                    addon = addon,
+                    type = type,
+                    id = id,
+                    videoId = videoId,
+                    videoHash = videoHash,
+                    videoSize = videoSize,
+                    filename = filename,
+                    completedCount = completedCount,
+                    total = total,
+                    onProgress = onProgress
+                )
+            }
+        }.toMutableList()
+
+        while (pending.isNotEmpty()) {
+            val (deferred, subtitles) = select<Pair<Deferred<List<Subtitle>>, List<Subtitle>>> {
+                pending.forEach { deferred ->
+                    deferred.onAwait { subtitles -> deferred to subtitles }
+                }
+            }
+            pending.remove(deferred)
+            val acceptedSubtitles = if (acceptSubtitle == null) {
+                subtitles
+            } else {
+                subtitles.filter(acceptSubtitle)
+            }
+            if (acceptedSubtitles.isNotEmpty()) {
+                pending.forEach { it.cancel() }
+                return@coroutineScope acceptedSubtitles
+            }
+        }
+
+        emptyList()
+    }
+
+    private suspend fun fetchAddonWithProgress(
+        addon: Addon,
+        type: String,
+        id: String,
+        videoId: String?,
+        videoHash: String?,
+        videoSize: Long?,
+        filename: String?,
+        completedCount: AtomicInteger,
+        total: Int,
+        onProgress: ((completed: Int, total: Int, addonName: String?) -> Unit)?
+    ): List<Subtitle> {
+        val addonStartMs = System.currentTimeMillis()
+        val subtitles = withTimeoutOrNull(PER_ADDON_TIMEOUT_MS) {
+            fetchSubtitlesFromAddon(addon, type, id, videoId, videoHash, videoSize, filename)
+        }
+        onProgress?.invoke(completedCount.incrementAndGet(), total, addon.displayName)
+        if (subtitles == null) {
+            Log.w(
+                TAG,
+                "Subtitle fetch timed out for addon=${addon.name} after ${PER_ADDON_TIMEOUT_MS}ms"
+            )
+            return emptyList()
+        }
+        Log.d(
+            TAG,
+            "Subtitle fetch done for addon=${addon.name} count=${subtitles.size} in ${System.currentTimeMillis() - addonStartMs}ms"
+        )
+        return subtitles
     }
 
     private fun canonicalSubtitleType(type: String): String {

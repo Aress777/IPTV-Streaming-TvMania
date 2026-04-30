@@ -22,4 +22,15 @@ interface SubtitleRepository {
         filename: String? = null,
         onProgress: ((completed: Int, total: Int, addonName: String?) -> Unit)? = null
     ): List<Subtitle>
+
+    suspend fun getFirstSubtitles(
+        type: String,
+        id: String,
+        videoId: String? = null,
+        videoHash: String? = null,
+        videoSize: Long? = null,
+        filename: String? = null,
+        onProgress: ((completed: Int, total: Int, addonName: String?) -> Unit)? = null,
+        acceptSubtitle: ((Subtitle) -> Boolean)? = null
+    ): List<Subtitle>
 }

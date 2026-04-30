@@ -49,14 +49,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-private const val STARTUP_SUBTITLE_PREFETCH_TIMEOUT_MS = 20_000L
-private const val STARTUP_SUBTITLE_FAST_PATH_TIMEOUT_MS = 1_500L
+private const val STARTUP_SUBTITLE_FAST_PATH_TIMEOUT_MS = 3_000L
 private const val MPV_AFR_SETTLE_DELAY_MS = 2_000L
 
 internal data class StartupSubtitlePreparation(
     val fetchedSubtitles: List<Subtitle>,
     val attachedSubtitles: List<Subtitle>,
-    val fetchCompleted: Boolean
+    val fetchCompleted: Boolean,
+    val needsBackgroundSubtitleFetch: Boolean = false
 )
 
 internal suspend fun PlayerRuntimeController.probeCurrentStreamMimeType(
@@ -527,8 +527,11 @@ internal fun PlayerRuntimeController.initializePlayer(
                 })
                 prepare()
             }
-            if (!startupSubtitlePreparation.fetchCompleted) {
-                fetchAddonSubtitles()
+            if (
+                !startupSubtitlePreparation.fetchCompleted ||
+                startupSubtitlePreparation.needsBackgroundSubtitleFetch
+            ) {
+                fetchAddonSubtitles(autoApplyAfterFetch = false)
             }
         } catch (e: Exception) {
             if (
@@ -654,15 +657,21 @@ internal suspend fun PlayerRuntimeController.prepareStartupSubtitles(
 
     _uiState.update { it.copy(isLoadingAddonSubtitles = true, addonSubtitlesError = null) }
 
-    val startupSubtitleTimeoutMs = if (mode == AddonSubtitleStartupMode.ALL_SUBTITLES) {
-        STARTUP_SUBTITLE_FAST_PATH_TIMEOUT_MS
+    val firstSubtitleFilter = if (mode == AddonSubtitleStartupMode.PREFERRED_ONLY) {
+        { subtitle: Subtitle ->
+            preferredTargets.any { target ->
+                PlayerSubtitleUtils.matchesLanguageCode(subtitle.lang, target)
+            }
+        }
     } else {
-        STARTUP_SUBTITLE_PREFETCH_TIMEOUT_MS
+        null
     }
 
-    val fetchedSubtitles = withTimeoutOrNull(startupSubtitleTimeoutMs) {
+    val fetchedSubtitles = withTimeoutOrNull(STARTUP_SUBTITLE_FAST_PATH_TIMEOUT_MS) {
         fetchAddonSubtitlesNow(
             computeHashIfMissing = false,
+            firstAvailableOnly = true,
+            firstSubtitleFilter = firstSubtitleFilter,
             onProgress = if (showLoadingStatus) { completed, total, addonName ->
                 val msg = if (completed == 0) {
                     context.getString(R.string.player_loading_subtitles_from, total)
@@ -693,7 +702,8 @@ internal suspend fun PlayerRuntimeController.prepareStartupSubtitles(
     return StartupSubtitlePreparation(
         fetchedSubtitles = fetchedSubtitles,
         attachedSubtitles = attachedSubtitles,
-        fetchCompleted = true
+        fetchCompleted = true,
+        needsBackgroundSubtitleFetch = true
     )
 }
 
