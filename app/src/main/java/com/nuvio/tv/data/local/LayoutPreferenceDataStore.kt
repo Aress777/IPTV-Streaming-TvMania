@@ -71,6 +71,9 @@ class LayoutPreferenceDataStore @Inject constructor(
     private val posterCardHeightDpKey = intPreferencesKey("poster_card_height_dp")
     private val posterCardCornerRadiusDpKey = intPreferencesKey("poster_card_corner_radius_dp")
     private val blurUnwatchedEpisodesKey = booleanPreferencesKey("blur_unwatched_episodes")
+    private val useEpisodeThumbnailsInCwKey = booleanPreferencesKey("use_episode_thumbnails_in_cw")
+    private val showUnairedNextUpKey = booleanPreferencesKey("show_unaired_next_up")
+    private val nextUpFromFurthestEpisodeKey = booleanPreferencesKey("next_up_from_furthest_episode")
     private val blurContinueWatchingNextUpKey = booleanPreferencesKey("blur_continue_watching_next_up")
     private val detailPageTrailerButtonEnabledKey = booleanPreferencesKey("detail_page_trailer_button_enabled")
     private val preferExternalMetaAddonDetailKey = booleanPreferencesKey("prefer_external_meta_addon_detail")
@@ -219,6 +222,18 @@ class LayoutPreferenceDataStore @Inject constructor(
 
     val blurUnwatchedEpisodes: Flow<Boolean> = profileFlow { prefs ->
         prefs[blurUnwatchedEpisodesKey] ?: false
+    }
+
+    val useEpisodeThumbnailsInCw: Flow<Boolean> = profileFlow { prefs ->
+        prefs[useEpisodeThumbnailsInCwKey] ?: true
+    }
+
+    val showUnairedNextUp: Flow<Boolean> = profileFlow { prefs ->
+        prefs[showUnairedNextUpKey] ?: true
+    }
+
+    val nextUpFromFurthestEpisode: Flow<Boolean> = profileFlow { prefs ->
+        prefs[nextUpFromFurthestEpisodeKey] ?: true
     }
 
     val blurContinueWatchingNextUp: Flow<Boolean> = profileFlow { prefs ->
@@ -469,6 +484,24 @@ class LayoutPreferenceDataStore @Inject constructor(
     suspend fun setBlurUnwatchedEpisodes(enabled: Boolean) {
         store().edit { prefs ->
             prefs[blurUnwatchedEpisodesKey] = enabled
+        }
+    }
+
+    suspend fun setUseEpisodeThumbnailsInCw(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[useEpisodeThumbnailsInCwKey] = enabled
+        }
+    }
+
+    suspend fun setShowUnairedNextUp(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[showUnairedNextUpKey] = enabled
+        }
+    }
+
+    suspend fun setNextUpFromFurthestEpisode(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[nextUpFromFurthestEpisodeKey] = enabled
         }
     }
 

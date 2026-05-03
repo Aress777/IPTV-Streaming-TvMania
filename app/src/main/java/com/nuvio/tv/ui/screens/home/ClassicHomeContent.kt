@@ -461,6 +461,7 @@ fun ClassicHomeContent(
                         }
                     },
                     blurUnwatchedEpisodes = uiState.blurUnwatchedEpisodes,
+                    useEpisodeThumbnails = uiState.useEpisodeThumbnailsInCw,
                     downFocusRequester = cwDownRequester,
                     cardWidth = classicContinueWatchingCardWidth,
                     imageHeight = classicContinueWatchingImageHeight

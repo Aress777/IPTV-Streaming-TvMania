@@ -921,18 +921,10 @@ private fun formatMDBListRating(provider: String, rating: Double): String {
     }
 }
 
-private val DETAIL_YEAR_RANGE_REGEX = Regex("""^((19|20)\d{2})\s*[-–]\s*((19|20)\d{2})?$""")
 
 private fun formatYearRange(releaseInfo: String?): String? {
     if (releaseInfo.isNullOrBlank()) return null
-    val trimmed = releaseInfo.trim()
-    val match = DETAIL_YEAR_RANGE_REGEX.find(trimmed)
-    if (match != null) {
-        val startYear = match.groupValues[1]
-        val endYear = match.groupValues[3]
-        return if (endYear.isNotBlank()) "$startYear–$endYear" else startYear
-    }
-    return Regex("""\b(19|20)\d{2}\b""").find(trimmed)?.value ?: trimmed
+    return releaseInfo.trim()
 }
 
 private fun formatRuntime(runtime: String): String {

@@ -68,7 +68,8 @@ internal class PlayerMediaSourceFactory {
         filename: String? = null,
         responseHeaders: Map<String, String> = emptyMap(),
         mimeTypeOverride: String? = null,
-        audioDelayUsProvider: (() -> Long)? = null
+        audioDelayUsProvider: (() -> Long)? = null,
+        mediaMetadata: androidx.media3.common.MediaMetadata? = null
     ): MediaSource {
         val sanitizedHeaders = sanitizeHeaders(headers)
         val httpDataSourceFactory = PlayerPlaybackNetworking.createDataSourceFactory(context, sanitizedHeaders)
@@ -83,6 +84,7 @@ internal class PlayerMediaSourceFactory {
 
         val mediaItemBuilder = MediaItem.Builder().setUri(url)
         resolvedMimeType?.let(mediaItemBuilder::setMimeType)
+        mediaMetadata?.let(mediaItemBuilder::setMediaMetadata)
 
         if (subtitleConfigurations.isNotEmpty()) {
             mediaItemBuilder.setSubtitleConfigurations(subtitleConfigurations)

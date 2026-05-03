@@ -73,6 +73,7 @@ class TraktProgressService @Inject constructor(
     private val metaRepository: MetaRepository,
     private val tmdbService: com.nuvio.tv.core.tmdb.TmdbService,
     private val traktSettingsDataStore: TraktSettingsDataStore,
+    private val layoutPreferenceDataStore: com.nuvio.tv.data.local.LayoutPreferenceDataStore,
     private val traktEpisodeMappingService: TraktEpisodeMappingService,
     private val profileManager: ProfileManager
 ) {
@@ -1222,8 +1223,9 @@ class TraktProgressService @Inject constructor(
             }
 
             val items = response.body().orEmpty()
+            val useFurthestEpisode = layoutPreferenceDataStore.nextUpFromFurthestEpisode.first()
             val watchedShowSeeds = items
-                .mapNotNull(::mapWatchedShowSeed)
+                .mapNotNull { mapWatchedShowSeed(it, useFurthestEpisode) }
                 .sortedByDescending { it.lastWatched }
 
             // Build per-show watched episodes map from the same response.
@@ -1295,7 +1297,7 @@ class TraktProgressService @Inject constructor(
         }
     }
 
-    private fun mapWatchedShowSeed(item: TraktWatchedShowItemDto): WatchProgress? {
+    private fun mapWatchedShowSeed(item: TraktWatchedShowItemDto, useFurthestEpisode: Boolean): WatchProgress? {
         val show = item.show ?: return null
         val contentId = normalizeContentId(show.ids)
         if (contentId.isBlank()) return null
@@ -1318,11 +1320,19 @@ class TraktProgressService @Inject constructor(
                     }
             }
             .maxWithOrNull(
-                compareBy<Triple<Int, Int, Long>>(
-                    { it.first },
-                    { it.second },
-                    { it.third }
-                )
+                if (useFurthestEpisode) {
+                    compareBy<Triple<Int, Int, Long>>(
+                        { it.first },
+                        { it.second },
+                        { it.third }
+                    )
+                } else {
+                    compareBy<Triple<Int, Int, Long>>(
+                        { it.third },
+                        { it.first },
+                        { it.second }
+                    )
+                }
             ) ?: return null
 
         val season = furthestEpisode.first
@@ -1966,6 +1976,16 @@ class TraktProgressService @Inject constructor(
                     source = WatchProgress.SOURCE_TRAKT_SHOW_PROGRESS
                 )
             }
+    }
+
+    internal suspend fun remapEpisodeSeedToAddon(
+        contentId: String,
+        contentType: String,
+        season: Int,
+        episode: Int,
+        episodeTitle: String?
+    ): EpisodeMappingEntry? {
+        return resolveAddonEpisodeProgress(contentId, season, episode, episodeTitle)
     }
 
     private suspend fun resolveAddonEpisodeProgress(

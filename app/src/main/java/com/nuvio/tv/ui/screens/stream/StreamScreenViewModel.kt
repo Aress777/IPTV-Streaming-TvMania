@@ -378,8 +378,10 @@ class StreamScreenViewModel @Inject constructor(
                             lastSuccessData = result.data
                             applySuccess(result.data, isAllLoaded = false)
                             if (timeoutElapsed && !autoSelectTriggered) {
-                                autoSelectTriggered = true
                                 applySuccess(result.data, isAllLoaded = true)
+                                if (resolvedAutoPlayTarget) {
+                                    autoSelectTriggered = true
+                                }
                             }
                         }
                         is NetworkResult.Error -> {
@@ -435,8 +437,10 @@ class StreamScreenViewModel @Inject constructor(
             }
             timeoutElapsed = true
             if (!autoSelectTriggered && lastSuccessData != null) {
-                autoSelectTriggered = true
                 applySuccess(lastSuccessData!!, isAllLoaded = true)
+                if (resolvedAutoPlayTarget) {
+                    autoSelectTriggered = true
+                }
             }
 
             // Hard wall-clock fallback: if the upstream stream flow never terminates

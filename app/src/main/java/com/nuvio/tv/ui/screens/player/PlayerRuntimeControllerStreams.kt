@@ -1062,8 +1062,11 @@ internal fun PlayerRuntimeController.playNextEpisode() {
                         is NetworkResult.Success -> {
                             lastSuccessData = result.data
                             if (timeoutElapsed && !autoSelectTriggered) {
-                                autoSelectTriggered = true
-                                selectedStream = trySelectStream(result.data)
+                                val candidate = trySelectStream(result.data)
+                                if (candidate != null) {
+                                    autoSelectTriggered = true
+                                    selectedStream = candidate
+                                }
                             }
                         }
                         is NetworkResult.Error -> lastError = result
@@ -1081,8 +1084,11 @@ internal fun PlayerRuntimeController.playNextEpisode() {
                 delay(timeoutMs)
                 timeoutElapsed = true
                 if (!autoSelectTriggered && lastSuccessData != null) {
-                    autoSelectTriggered = true
-                    selectedStream = trySelectStream(lastSuccessData!!)
+                    val candidate = trySelectStream(lastSuccessData!!)
+                    if (candidate != null) {
+                        autoSelectTriggered = true
+                        selectedStream = candidate
+                    }
                 }
                 if (selectedStream != null) {
                     innerJob.cancel()

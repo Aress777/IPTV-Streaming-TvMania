@@ -125,9 +125,10 @@ internal suspend fun HomeViewModel.loadAllCatalogsPipeline(
     forceReload: Boolean = false
 ) {
     val signature = buildHomeCatalogLoadSignature(addons)
+    val hasActiveLoads = synchronized(activeCatalogLoadJobs) { activeCatalogLoadJobs.any { it.isActive } }
     if (!forceReload &&
         signature == activeCatalogLoadSignature &&
-        (catalogsLoadInProgress || hasAnyCatalogRows())
+        (hasActiveLoads || hasAnyCatalogRows())
     ) {
         return
     }

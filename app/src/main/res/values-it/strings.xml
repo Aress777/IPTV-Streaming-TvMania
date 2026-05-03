@@ -1652,4 +1652,19 @@
   <string name="collections_editor_tmdb_networks_helper">Solo per le serie. Usa gli ID network come Netflix 213 o HBO 49.</string>
   <string name="collections_editor_tmdb_year">Anno</string>
   <string name="collections_editor_tmdb_year_helper">Usa l\'anno a quattro cifre, ad esempio 2024.</string>
+  <string name="sponsors_tab">Sponsor</string>
+  <string name="sponsors_loading">Caricamento sponsor…</string>
+  <string name="sponsors_empty">Nessuno sponsor trovato.</string>
+  <string name="sponsors_error_title">Impossibile caricare gli sponsor</string>
+  <string name="sponsors_detail_copy">Gli sponsor aiutano Nuvio a progredire supportando le diverse fasi dello sviluppo.</string>
+  <string name="sponsors_channel_unavailable">Canale sponsor non disponibile.</string>
+  <string name="sponsors_open_channel">Apri canale sponsor</string>
+  <string name="audio_remember_delay_per_device">Ricorda ritardo audio per dispositivo</string>
+  <string name="audio_remember_delay_per_device_sub">Salva e ripristina il ritardo audio nel player per l\'attuale uscita audio</string>
+  <string name="catalog_order_follow_addons">Segui l\'ordine degli addon</string>
+  <string name="catalog_order_follow_addons_desc">I cataloghi seguono l\'ordine del manifest degli addon. Le collezioni possono comunque essere spostate tra gli addon.</string>
+  <string name="audio_delay_label">Ritardo audio</string>
+  <string name="audio_delay_range">Intervallo: da %1$.2fs a %2$.2fs</string>
+  <string name="collections_editor_hero_video">Video Hero (Home Moderna)</string>
+  <string name="collections_editor_placeholder_hero_video">URL video hero personalizzato (opzionale)</string>
 </resources>

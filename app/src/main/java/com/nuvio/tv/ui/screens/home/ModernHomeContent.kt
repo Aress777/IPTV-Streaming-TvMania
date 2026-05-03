@@ -69,6 +69,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.metrics.performance.PerformanceMetricsState
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import coil3.request.CachePolicy
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -864,29 +868,31 @@ fun ModernHomeContent(
                 verticalRowListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
             }.distinctUntilChanged().collect { lastVisibleRowIndex ->
                 val rows = carouselRows
-                for (rowOffset in 1..prefetchAheadRows) {
-                    val row = rows.getOrNull(lastVisibleRowIndex + rowOffset) ?: continue
-                    for (i in 0 until minOf(prefetchItemsPerRow, row.items.size)) {
-                        val item = row.items[i]
-                        val url = item.imageUrl ?: continue
-                        val metrics = item.catalogCardMetrics(
-                            useLandscapePosters = useLandscapePosters,
-                            portraitCardWidth = portraitCatalogCardWidth,
-                            portraitCardHeight = portraitCatalogCardHeight,
-                            landscapeCardWidth = landscapeCatalogCardWidth,
-                            landscapeCardHeight = landscapeCatalogCardHeight
-                        )
-                        val wPx = with(verticalPrefetchDensity) { metrics.width.roundToPx() }
-                        val hPx = with(verticalPrefetchDensity) { metrics.height.roundToPx() }
-                        val cacheKey = "${url}_${wPx}x${hPx}"
-                        if (verticalPrefetchImageLoader.memoryCache?.get(MemoryCache.Key(cacheKey)) != null) continue
-                        verticalPrefetchImageLoader.enqueue(
-                            ImageRequest.Builder(verticalPrefetchContext)
-                                .data(url)
-                                .memoryCacheKey(cacheKey)
-                                .size(width = wPx, height = hPx)
-                                .build()
-                        )
+                withContext(Dispatchers.IO) {
+                    for (rowOffset in 1..prefetchAheadRows) {
+                        val row = rows.getOrNull(lastVisibleRowIndex + rowOffset) ?: continue
+                        for (i in 0 until minOf(prefetchItemsPerRow, row.items.size)) {
+                            val item = row.items[i]
+                            val url = item.imageUrl ?: continue
+                            val metrics = item.catalogCardMetrics(
+                                useLandscapePosters = useLandscapePosters,
+                                portraitCardWidth = portraitCatalogCardWidth,
+                                portraitCardHeight = portraitCatalogCardHeight,
+                                landscapeCardWidth = landscapeCatalogCardWidth,
+                                landscapeCardHeight = landscapeCatalogCardHeight
+                            )
+                            val wPx = with(verticalPrefetchDensity) { metrics.width.roundToPx() }
+                            val hPx = with(verticalPrefetchDensity) { metrics.height.roundToPx() }
+                            val cacheKey = "${url}_${wPx}x${hPx}"
+                            if (verticalPrefetchImageLoader.memoryCache?.get(MemoryCache.Key(cacheKey)) != null) continue
+                            verticalPrefetchImageLoader.enqueue(
+                                ImageRequest.Builder(verticalPrefetchContext)
+                                    .data(url)
+                                    .memoryCacheKey(cacheKey)
+                                    .size(width = wPx, height = hPx)
+                                    .build()
+                            )
+                        }
                     }
                 }
             }
@@ -1081,6 +1087,7 @@ fun ModernHomeContent(
                                 continueWatchingCardWidth = continueWatchingCardWidth,
                                 continueWatchingCardHeight = continueWatchingCardHeight,
                                 blurUnwatchedEpisodes = uiState.blurUnwatchedEpisodes,
+                                useEpisodeThumbnails = uiState.useEpisodeThumbnailsInCw,
                                 onContinueWatchingClick = onContinueWatchingClick,
                                 onContinueWatchingOptions = stableOnContinueWatchingOptions,
                                 isCatalogItemWatched = isCatalogItemWatched,

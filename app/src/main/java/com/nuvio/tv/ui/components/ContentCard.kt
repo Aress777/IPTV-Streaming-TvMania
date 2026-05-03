@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Check
@@ -69,6 +70,8 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.CachePolicy
 import coil3.request.crossfade
+
+import com.nuvio.tv.ui.screens.home.LocalFastScrollActive
 import com.nuvio.tv.ui.theme.ThemeColors
 import kotlinx.coroutines.delay
 
@@ -178,6 +181,7 @@ fun ContentCard(
 
     // Only pay the animation cost on the card that is actually focused/expanding.
     // Unfocused cards snap directly to baseCardWidth — no animation state overhead.
+    val isFastScrollActive = LocalFastScrollActive.current
     val animatedCardWidth = when {
         !focusedPosterBackdropExpandEnabled -> baseCardWidth
         !isFocused && !isBackdropExpanded -> baseCardWidth
@@ -237,6 +241,7 @@ fun ContentCard(
         val requestHeightPx = remember(baseCardHeight, density) {
             with(density) { baseCardHeight.roundToPx() }
         }
+
         val imageUrl = if (focusedPosterBackdropExpandEnabled && isBackdropExpanded) {
             item.backdropUrl ?: item.poster
         } else {
@@ -510,7 +515,7 @@ fun ContentCard(
                             .padding(end = 8.dp, top = 8.dp)
                             .zIndex(2f)
                             .size(21.dp)
-                            .shadow(10.dp, shape = CircleShape)
+                            .shadow(10.dp, shape = CircleShape, spotColor = Color.Transparent)
                             .background(NuvioColors.Secondary, CircleShape)
                     ) {
                         Icon(

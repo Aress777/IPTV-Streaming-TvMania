@@ -321,7 +321,7 @@ class TraktEpisodeMappingService @Inject constructor(
 
         for (type in typeCandidates) {
             for (candidateId in idCandidates) {
-                val result = withTimeoutOrNull(3500) {
+                val result = withTimeoutOrNull(8000) {
                     metaRepository.getMetaFromAllAddons(type = type, id = candidateId)
                         .first { it !is NetworkResult.Loading }
                 } ?: continue
