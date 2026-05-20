@@ -84,12 +84,12 @@ class WatchedItemsSyncService @Inject constructor(
 
     suspend fun pushItemsToRemote(
         items: Collection<WatchedItem>,
-        updateLastSuccessfulPush: Boolean = false
+        updateLastSuccessfulPush: Boolean = false,
+        profileId: Int = profileManager.activeProfileId.value
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             if (items.isEmpty()) return@withContext Result.success(Unit)
             Log.d(TAG, "pushItemsToRemote: ${items.size} watched items to push")
-            val profileId = profileManager.activeProfileId.value
             val params = buildJsonObject {
                 put("p_items", buildJsonArray {
                     items.forEach { item ->
@@ -172,10 +172,10 @@ class WatchedItemsSyncService @Inject constructor(
     suspend fun deleteFromRemote(
         contentId: String,
         season: Int?,
-        episode: Int?
+        episode: Int?,
+        profileId: Int = profileManager.activeProfileId.value
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val profileId = profileManager.activeProfileId.value
             val params = buildJsonObject {
                 put("p_profile_id", profileId)
                 put("p_keys", buildJsonArray {
@@ -200,12 +200,12 @@ class WatchedItemsSyncService @Inject constructor(
 
     suspend fun deleteFromRemoteBatch(
         contentId: String,
-        episodes: List<Pair<Int, Int>>
+        episodes: List<Pair<Int, Int>>,
+        profileId: Int = profileManager.activeProfileId.value
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             if (episodes.isEmpty()) return@withContext Result.success(Unit)
 
-            val profileId = profileManager.activeProfileId.value
             val params = buildJsonObject {
                 put("p_profile_id", profileId)
                 put("p_keys", buildJsonArray {
