@@ -27,6 +27,7 @@ import com.nuvio.tv.ui.screens.home.HomeScreen
 import com.nuvio.tv.ui.screens.addon.AddonManagerScreen
 import com.nuvio.tv.ui.screens.addon.CatalogOrderScreen
 import com.nuvio.tv.ui.screens.library.LibraryScreen
+import com.nuvio.tv.ui.screens.livetv.LiveTvScreen
 import com.nuvio.tv.ui.screens.player.PlayerExitReason
 import com.nuvio.tv.ui.screens.player.PlayerScreen
 import com.nuvio.tv.ui.screens.plugin.PluginScreen
@@ -1052,6 +1053,27 @@ fun NuvioNavHost(
                             videoSize = info.videoSizeBytes,
                             addonName = info.item.providerName,
                             streamDescription = info.item.name
+                        )
+                    )
+                }
+            )
+        }
+
+        composable(Screen.LiveTv.route) {
+            LiveTvScreen(
+                onPlayChannel = { channel ->
+                    navController.navigate(
+                        Screen.Player.createRoute(
+                            streamUrl = channel.streamUrl,
+                            title = channel.name,
+                            streamName = channel.group.ifBlank { "Live TV" },
+                            headers = channel.headers,
+                            contentId = channel.streamUrl,
+                            contentType = "live_tv",
+                            contentName = channel.name,
+                            poster = channel.logoUrl,
+                            videoId = channel.streamUrl,
+                            addonName = "M3U Live TV"
                         )
                     )
                 }

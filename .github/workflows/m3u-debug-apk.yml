@@ -1,0 +1,31 @@
+name: Build NuvioTV M3U APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Create optional local configuration
+        run: touch local.properties
+      - name: Build debug APK
+        run: ./gradlew :app:assembleFullDebug --stacktrace
+      - uses: actions/upload-artifact@v6
+        with:
+          name: nuviotv-m3u-debug-apk
+          path: app/build/outputs/apk/full/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

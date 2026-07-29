@@ -2866,4 +2866,17 @@
     <string name="stream_test_video_bitrate">Average Video Bitrate: %1$s</string>
     <string name="stream_test_error_connection">Connection failed. The last played stream link may have expired or is unreachable. Please play the video again and retry.</string>
 
+    <string name="nav_live_tv">Live TV</string>
+    <string name="live_tv_title">Live TV</string>
+    <string name="live_tv_source_hint">M3U or M3U8 playlist URL</string>
+    <string name="live_tv_load">Load playlist</string>
+    <string name="live_tv_refresh">Refresh</string>
+    <string name="live_tv_all_channels">All channels</string>
+    <string name="live_tv_favorites">Favorites</string>
+    <string name="live_tv_empty">Enter an M3U playlist URL, then select Load playlist.</string>
+    <string name="live_tv_no_channels">No channels found in this group.</string>
+    <string name="live_tv_loading">Loading playlist…</string>
+    <string name="live_tv_error">Could not load playlist: %1$s</string>
+    <string name="live_tv_favorite">Favorite</string>
+    <string name="live_tv_unfavorite">Remove favorite</string>
 </resources>
