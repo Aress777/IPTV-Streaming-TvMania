@@ -21,6 +21,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Create optional local configuration
         run: touch local.properties
+      - name: Create CI debug signing key
+        run: |
+          keytool -genkeypair -v \
+            -keystore nuviotv.jks \
+            -storepass 815787 \
+            -alias nuviotv \
+            -keypass 815787 \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=NuvioTV M3U CI, OU=Android TV, O=Nuvio, L=Bucharest, C=RO"
       - name: Build debug APK
         run: ./gradlew :app:assembleFullDebug --stacktrace
       - uses: actions/upload-artifact@v6
