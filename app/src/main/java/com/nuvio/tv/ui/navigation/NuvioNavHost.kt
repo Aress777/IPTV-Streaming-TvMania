@@ -28,6 +28,7 @@ import com.nuvio.tv.ui.screens.addon.AddonManagerScreen
 import com.nuvio.tv.ui.screens.addon.CatalogOrderScreen
 import com.nuvio.tv.ui.screens.library.LibraryScreen
 import com.nuvio.tv.ui.screens.livetv.LiveTvScreen
+import com.nuvio.tv.ui.screens.livetv.LiveTvSettingsScreen
 import com.nuvio.tv.ui.screens.player.PlayerExitReason
 import com.nuvio.tv.ui.screens.player.PlayerScreen
 import com.nuvio.tv.ui.screens.plugin.PluginScreen
@@ -1087,6 +1088,7 @@ fun NuvioNavHost(
                 onNavigateToAddons = { navController.navigate(Screen.AddonManager.route) },
                 onNavigateToPlugins = { navController.navigate(Screen.Plugins.route) },
                 onNavigateToAuthQrSignIn = { navController.navigate(Screen.AuthQrSignIn.route) },
+                onNavigateToLiveTvSettings = { navController.navigate(Screen.LiveTvSettings.route) },
                 onNavigateToManageProfiles = { navController.navigate(Screen.ManageProfiles.route) },
                 onNavigateToSupportersContributors = {
                     navController.navigate(Screen.SupportersContributors.route)
@@ -1095,6 +1097,10 @@ fun NuvioNavHost(
                     navController.navigate(Screen.LicensesAttributions.route)
                 }
             )
+        }
+
+        composable(Screen.LiveTvSettings.route) {
+            LiveTvSettingsScreen(onBackPress = { navController.popBackStack() })
         }
 
         composable(Screen.ManageProfiles.route) {

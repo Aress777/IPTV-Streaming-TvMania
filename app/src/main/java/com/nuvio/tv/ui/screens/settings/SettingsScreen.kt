@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -98,6 +99,7 @@ internal enum class SettingsCategory {
     LAYOUT,
     CONTENT_DISCOVERY,
     INTEGRATION,
+    LIVE_TV,
     PLAYBACK,
     ADVANCED,
     TRAKT,
@@ -189,6 +191,13 @@ private fun rememberSettingsSectionSpecs() = listOf(
         destination = SettingsSectionDestination.Inline
     ),
     SettingsSectionSpec(
+        category = SettingsCategory.LIVE_TV,
+        title = stringResource(R.string.live_tv_settings_title),
+        icon = Icons.Default.LiveTv,
+        subtitle = stringResource(R.string.live_tv_settings_subtitle),
+        destination = SettingsSectionDestination.External
+    ),
+    SettingsSectionSpec(
         category = SettingsCategory.PLAYBACK,
         title = stringResource(R.string.settings_playback),
         icon = Icons.Rounded.PlayArrow,
@@ -232,6 +241,7 @@ fun SettingsScreen(
     onNavigateToAddons: () -> Unit = {},
     onNavigateToPlugins: () -> Unit = {},
     onNavigateToAuthQrSignIn: () -> Unit = {},
+    onNavigateToLiveTvSettings: () -> Unit = {},
     onNavigateToManageProfiles: () -> Unit = {},
     onNavigateToSupportersContributors: () -> Unit = {},
     onNavigateToLicensesAttributions: () -> Unit = {},
@@ -269,6 +279,7 @@ fun SettingsScreen(
                 SettingsCategory.LAYOUT -> true
                 SettingsCategory.CONTENT_DISCOVERY -> true
                 SettingsCategory.INTEGRATION -> true
+                SettingsCategory.LIVE_TV -> true
                 SettingsCategory.ADVANCED -> true
                 else -> true
             }
@@ -359,6 +370,7 @@ fun SettingsScreen(
                     when (section.category) {
                         SettingsCategory.ACCOUNT -> onNavigateToAuthQrSignIn()
                         SettingsCategory.TRAKT -> onNavigateToTrakt()
+                        SettingsCategory.LIVE_TV -> onNavigateToLiveTvSettings()
                         else -> Unit
                     }
                 } else {
@@ -830,6 +842,7 @@ private fun SettingsDetailPane(
         )
         SettingsCategory.DEBUG -> DebugSettingsContent()
         SettingsCategory.TRAKT -> Unit
+        SettingsCategory.LIVE_TV -> Unit
     }
 }
 

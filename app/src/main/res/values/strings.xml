@@ -2873,10 +2873,16 @@
     <string name="live_tv_refresh">Refresh</string>
     <string name="live_tv_all_channels">All channels</string>
     <string name="live_tv_favorites">Favorites</string>
-    <string name="live_tv_empty">Enter an M3U playlist URL, then select Load playlist.</string>
+    <string name="live_tv_empty">No playlists configured. Add one in Settings → Live TV playlists.</string>
     <string name="live_tv_no_channels">No channels found in this group.</string>
     <string name="live_tv_loading">Loading playlist…</string>
     <string name="live_tv_error">Could not load playlist: %1$s</string>
     <string name="live_tv_favorite">Favorite</string>
     <string name="live_tv_unfavorite">Remove favorite</string>
+    <string name="live_tv_settings_title">Live TV playlists</string>
+    <string name="live_tv_settings_subtitle">Add, refresh or remove persistent M3U playlists</string>
+    <string name="live_tv_settings_description">Playlists are downloaded once and saved on this TV. Add multiple lists here; they appear as folders in Live TV.</string>
+    <string name="live_tv_playlist_name">Playlist name</string>
+    <string name="live_tv_add_playlist">Add playlist</string>
+    <string name="live_tv_delete">Delete</string>
 </resources>

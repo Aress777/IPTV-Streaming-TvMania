@@ -20,7 +20,13 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v6
       - name: Create optional local configuration
-        run: touch local.properties
+        run: |
+          cat > local.dev.properties <<'EOF'
+          NUVIO_SUPABASE_URL=https://api.nuvio.tv
+          NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN
+          TV_LOGIN_WEB_BASE_URL=https://nuvio.tv/tv-login
+          EOF
+          touch local.properties
       - name: Create CI debug signing key
         run: |
           keytool -genkeypair -v \

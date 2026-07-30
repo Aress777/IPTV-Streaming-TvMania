@@ -18,15 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,33 +51,37 @@ fun LiveTvScreen(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Text(text = stringResource(R.string.live_tv_title), style = MaterialTheme.typography.headlineLarge)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = state.sourceUrl,
-                onValueChange = viewModel::setSourceUrl,
-                singleLine = true,
-                label = { androidx.compose.material3.Text(stringResource(R.string.live_tv_source_hint)) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = NuvioTheme.colors.Primary
-                ),
-                modifier = Modifier.weight(1f)
-            )
-            Button(onClick = viewModel::loadPlaylist, enabled = !state.isLoading) {
-                Text(if (state.hasLoaded) stringResource(R.string.live_tv_refresh) else stringResource(R.string.live_tv_load))
-            }
-        }
         when {
             state.isLoading -> Text(stringResource(R.string.live_tv_loading))
             state.error != null -> Text(stringResource(R.string.live_tv_error, state.error!!), color = NuvioTheme.colors.Error)
-            !state.hasLoaded -> Text(stringResource(R.string.live_tv_empty), color = NuvioTheme.colors.TextSecondary)
+            state.playlists.isEmpty() -> Text(stringResource(R.string.live_tv_empty), color = NuvioTheme.colors.TextSecondary)
             else -> Row(
                 modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 LazyColumn(
-                    modifier = Modifier.width(250.dp).fillMaxHeight().focusGroup(),
+                    modifier = Modifier.width(210.dp).fillMaxHeight().focusGroup(),
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(state.playlists, key = { it.id }) { playlist ->
+                        Card(
+                            onClick = { viewModel.selectPlaylist(playlist.id) },
+                            colors = CardDefaults.colors(
+                                containerColor = if (state.selectedPlaylist?.id == playlist.id)
+                                    NuvioTheme.colors.Primary.copy(alpha = .65f) else NuvioTheme.colors.Surface
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(playlist.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("${playlist.channels.size} channels", color = NuvioTheme.colors.TextSecondary)
+                            }
+                        }
+                    }
+                }
+                LazyColumn(
+                    modifier = Modifier.width(230.dp).fillMaxHeight().focusGroup(),
                     contentPadding = PaddingValues(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
