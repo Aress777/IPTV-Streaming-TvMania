@@ -128,15 +128,34 @@ class LiveTvViewModel @Inject constructor(
                         "type" to "itv", "action" to "create_link", "cmd" to command,
                         "series" to "0", "forced_storage" to "undefined", "disable_ad" to "0", "download" to "0"
                     ))
-                    val raw = response.optJSONObject("js")?.optString("cmd").orEmpty()
-                    val url = raw.removePrefix("ffmpeg ").removePrefix("ffrt ").trim()
-                    check(url.startsWith("http")) { "Portal did not return a playable stream." }
+                    val responseCommand = response.optJSONObject("js")?.optString("cmd").orEmpty()
+                    val url = resolveStalkerPlaybackUrl(portal, command, responseCommand)
+                    check(url.startsWith("http://") || url.startsWith("https://")) {
+                        "Portal did not return a playable stream."
+                    }
+                    val streamOrigin = url.toHttpUrlOrNull()?.let { "${it.scheme}://${it.host}:${it.port}" }
+                    val portalOrigin = portal.toHttpUrlOrNull()?.let { "${it.scheme}://${it.host}:${it.port}" }
+                    val playbackHeaders = if (streamOrigin != null && portalOrigin != null && streamOrigin != portalOrigin) {
+                        mapOf(
+                            "User-Agent" to STALKER_STREAM_USER_AGENT,
+                            "Accept" to "*/*",
+                            "Range" to "bytes=0-",
+                            "Icy-MetaData" to "1",
+                            "Connection" to "keep-alive"
+                        )
+                    } else {
+                        mapOf(
+                            "Cookie" to "mac=$mac; stb_lang=en_US@rg=dezzzz; timezone=Europe/Bucharest",
+                            "User-Agent" to MAG_USER_AGENT,
+                            "X-User-Agent" to MAG_USER_AGENT,
+                            "Authorization" to "Bearer $token",
+                            "Origin" to portalOrigin.orEmpty(),
+                            "Referer" to portalOrigin.orEmpty()
+                        ).filterValues(String::isNotBlank)
+                    }
                     channel.copy(
                         streamUrl = url,
-                        headers = channel.headers + mapOf(
-                            "Cookie" to "mac=$mac; stb_lang=en_US; timezone=Europe/Bucharest",
-                            "User-Agent" to MAG_USER_AGENT
-                        )
+                        headers = channel.headers + playbackHeaders
                     )
                 }
             }.onSuccess {
@@ -296,6 +315,40 @@ class LiveTvViewModel @Inject constructor(
         }
     }
 
+    private fun normalizeStalkerCommand(value: String): String {
+        val trimmed = value.trim()
+        if (trimmed.isBlank()) return ""
+        val space = trimmed.indexOf(' ')
+        if (space > 0) {
+            val candidate = trimmed.substring(space + 1).trim()
+            if (candidate.startsWith("http://") || candidate.startsWith("https://") ||
+                candidate.startsWith("/") || candidate.startsWith("?")) return candidate
+        }
+        return trimmed
+    }
+
+    private fun resolveStalkerPlaybackUrl(portal: String, originalCommand: String, responseCommand: String): String {
+        var resolved = normalizeStalkerCommand(responseCommand)
+        if (resolved.isBlank()) resolved = normalizeStalkerCommand(originalCommand)
+        if (resolved.startsWith("http://") || resolved.startsWith("https://")) return resolved
+        val portalUrl = portal.toHttpUrlOrNull() ?: return resolved
+        val origin = "${portalUrl.scheme}://${portalUrl.host}:${portalUrl.port}"
+        val path = portalUrl.encodedPath
+        val basePath = when {
+            "/stalker_portal/" in path -> path.substringBefore("/stalker_portal/") + "/stalker_portal"
+            "/portal/" in path -> path.substringBefore("/portal/") + "/portal"
+            else -> ""
+        }
+        return when {
+            resolved.startsWith("?") -> {
+                val original = normalizeStalkerCommand(originalCommand)
+                if (original.startsWith("http")) original + resolved else origin + basePath + original + resolved
+            }
+            resolved.startsWith("/") -> origin + basePath + resolved
+            else -> resolved
+        }
+    }
+
     private fun sha1(value: String): String = MessageDigest.getInstance("SHA-1")
         .digest(value.uppercase().toByteArray()).joinToString("") { "%02X".format(it) }
 
@@ -305,5 +358,6 @@ class LiveTvViewModel @Inject constructor(
         val ATTRIBUTE = Regex("""([\w-]+)="([^"]*)"""")
         val MAC_PATTERN = Regex("""^([0-9A-F]{2}:){5}[0-9A-F]{2}$""")
         const val MAG_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG250"
+        const val STALKER_STREAM_USER_AGENT = "KSPlayer"
     }
 }
