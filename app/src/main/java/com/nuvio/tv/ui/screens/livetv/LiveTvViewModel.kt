@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONArray
 import org.json.JSONObject
@@ -123,8 +124,8 @@ class LiveTvViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             runCatching {
                 withContext(Dispatchers.IO) {
-                    val token = stalkerHandshake(portal, mac).first
-                    val response = stalkerRequest(portal, mac, token, mapOf(
+                    val session = openStalkerSession(portal, mac)
+                    val response = stalkerRequest(session, mapOf(
                         "type" to "itv", "action" to "create_link", "cmd" to command,
                         "series" to "0", "forced_storage" to "undefined", "disable_ad" to "0", "download" to "0"
                     ))
@@ -135,9 +136,7 @@ class LiveTvViewModel @Inject constructor(
                     check(url.startsWith("http://") || url.startsWith("https://")) {
                         "Portal did not return a playable stream."
                     }
-                    // MAC Stalker Player hands the resolved URL directly to VLC/SMPlayer.
-                    // Portal authentication is used only while generating this temporary URL.
-                    channel.copy(streamUrl = url, headers = emptyMap())
+                    channel.copy(streamUrl = url, headers = buildStalkerPlaybackHeaders(session, url))
                 }
             }.onSuccess {
                 _uiState.update { state -> state.copy(isLoading = false) }
@@ -225,24 +224,24 @@ class LiveTvViewModel @Inject constructor(
     }
 
     private fun loadStalkerChannels(portal: String, mac: String): List<LiveTvChannel> {
-        val (token, random) = stalkerHandshake(portal, mac)
-        stalkerRequest(portal, mac, token, mapOf(
+        val session = openStalkerSession(portal, mac)
+        stalkerRequest(session, mapOf(
             "type" to "stb", "action" to "get_profile", "hd" to "1",
             "auth_second_step" to "1", "not_valid_token" to "0",
-            "metrics" to JSONObject(mapOf("mac" to mac, "model" to "MAG250", "type" to "STB", "random" to random)).toString(),
+            "metrics" to JSONObject(mapOf("mac" to mac, "model" to "MAG250", "type" to "STB", "random" to session.random)).toString(),
             "prehash" to sha1(mac)
         ))
-        val genresResponse = stalkerRequest(portal, mac, token, mapOf("type" to "itv", "action" to "get_genres"))
+        val genresResponse = stalkerRequest(session, mapOf("type" to "itv", "action" to "get_genres"))
         val genreNames = mutableMapOf<String, String>()
         val genreArray = genresResponse.optJSONArray("js") ?: JSONArray()
         for (i in 0 until genreArray.length()) {
             val genre = genreArray.optJSONObject(i) ?: continue
             genreNames[genre.optString("id")] = genre.optString("title", "Other")
         }
-        val channelsResponse = stalkerRequest(portal, mac, token, mapOf("type" to "itv", "action" to "get_all_channels"))
+        val channelsResponse = stalkerRequest(session, mapOf("type" to "itv", "action" to "get_all_channels"))
         var data = channelsResponse.optJSONObject("js")?.optJSONArray("data")
         if (data == null || data.length() == 0) {
-            val fallback = stalkerRequest(portal, mac, token, mapOf(
+            val fallback = stalkerRequest(session, mapOf(
                 "type" to "itv", "action" to "get_ordered_list", "genre" to "*", "category" to "*", "p" to "1"
             ))
             data = fallback.optJSONObject("js")?.optJSONArray("data") ?: JSONArray()
@@ -260,41 +259,59 @@ class LiveTvViewModel @Inject constructor(
         }.distinctBy { it.streamUrl }
     }
 
-    private fun stalkerHandshake(portal: String, mac: String): Pair<String, String> {
-        val response = stalkerRequest(portal, mac, null, mapOf(
+    private fun openStalkerSession(portal: String, mac: String): StalkerSession {
+        val session = StalkerSession(portal = portal, mac = mac)
+        val response = stalkerRequest(session, mapOf(
             "type" to "stb", "action" to "handshake", "token" to "", "prehash" to sha1(mac)
         ))
         val js = response.optJSONObject("js") ?: error("Invalid handshake response.")
         val token = js.optString("token")
         check(token.isNotBlank()) { "Portal rejected the MAC address." }
-        return token to js.optString("random")
+        session.token = token
+        session.random = js.optString("random")
+        return session
     }
 
-    private fun stalkerRequest(portal: String, mac: String, token: String?, params: Map<String, String>): JSONObject {
-        val url = portal.toHttpUrlOrNull()?.newBuilder() ?: error("Invalid portal URL.")
+    private fun stalkerRequest(session: StalkerSession, params: Map<String, String>): JSONObject {
+        val url = session.portal.toHttpUrlOrNull()?.newBuilder() ?: error("Invalid portal URL.")
         params.forEach { (key, value) -> url.addQueryParameter(key, value) }
         url.addQueryParameter("JsHttpRequest", "1-xml")
-        val portalHttpUrl = portal.toHttpUrlOrNull() ?: error("Invalid portal URL.")
+        val portalHttpUrl = session.portal.toHttpUrlOrNull() ?: error("Invalid portal URL.")
         val portalOrigin = "${portalHttpUrl.scheme}://${portalHttpUrl.host}:${portalHttpUrl.port}"
-        val cookie = buildString {
-            append("mac=").append(java.net.URLEncoder.encode(mac, "UTF-8"))
-            append("; stb_lang=en; timezone=").append(java.net.URLEncoder.encode("Europe/Bucharest", "UTF-8"))
-            if (!token.isNullOrBlank()) append("; token=").append(java.net.URLEncoder.encode(token, "UTF-8"))
-        }
         val request = Request.Builder().url(url.build())
             .header("Accept", "*/*")
-            .header("Cookie", cookie)
+            .header("Cookie", session.cookieHeader())
             .header("User-Agent", STALKER_ALT_USER_AGENT)
             .header("X-User-Agent", "Model: MAG250; Link: WiFi")
             .header("Referer", "$portalOrigin/stalker_portal/c/index.html")
             .header("Accept-Language", "en-US,en;q=0.5")
             .header("Pragma", "no-cache")
             .header("Connection", "Close")
-            .apply { if (!token.isNullOrBlank()) header("Authorization", "Bearer $token") }
+            .apply { if (session.token.isNotBlank()) header("Authorization", "Bearer ${session.token}") }
             .build()
         httpClient.newCall(request).execute().use { response ->
             check(response.isSuccessful) { "Portal HTTP ${response.code}" }
+            Cookie.parseAll(response.request.url, response.headers).forEach { cookie ->
+                session.serverCookies[cookie.name] = cookie.value
+            }
             return JSONObject(response.body?.string().orEmpty())
+        }
+    }
+
+    private fun buildStalkerPlaybackHeaders(session: StalkerSession, url: String): Map<String, String> {
+        val target = url.toHttpUrlOrNull()
+        val path = target?.encodedPath.orEmpty().lowercase()
+        return buildMap {
+            put("User-Agent", STALKER_PLAYER_USER_AGENT)
+            put("Referer", session.referer())
+            put("Accept", "*/*")
+            put("Connection", "keep-alive")
+            target?.let { put("Host", if (it.port == 80 || it.port == 443) it.host else "${it.host}:${it.port}") }
+            put("Cookie", session.cookieHeader())
+            put("X-User-Agent", "Model: MAG250; Link: WiFi")
+            if (!path.endsWith("/play/live.php") && !path.endsWith("/play/movie.php")) {
+                put("Authorization", "Bearer ${session.token}")
+            }
         }
     }
 
@@ -349,6 +366,28 @@ class LiveTvViewModel @Inject constructor(
     private fun sha1(value: String): String = MessageDigest.getInstance("SHA-1")
         .digest(value.uppercase().toByteArray()).joinToString("") { "%02X".format(it) }
 
+    private data class StalkerSession(
+        val portal: String,
+        val mac: String,
+        var token: String = "",
+        var random: String = "",
+        val serverCookies: LinkedHashMap<String, String> = linkedMapOf()
+    ) {
+        fun cookieHeader(): String = buildList {
+            add("mac=${java.net.URLEncoder.encode(mac, "UTF-8")}")
+            add("stb_lang=en")
+            add("timezone=${java.net.URLEncoder.encode("Europe/Bucharest", "UTF-8")}")
+            serverCookies.forEach { (name, value) ->
+                if (name !in setOf("mac", "stb_lang", "timezone")) add("$name=$value")
+            }
+        }.joinToString("; ")
+
+        fun referer(): String {
+            val url = portal.toHttpUrlOrNull() ?: return portal
+            return "${url.scheme}://${url.host}:${url.port}/stalker_portal/c/index.html"
+        }
+    }
+
     private companion object {
         const val KEY_PLAYLISTS = "playlists_json_v2"
         const val KEY_FAVORITES = "favorite_urls"
@@ -356,5 +395,6 @@ class LiveTvViewModel @Inject constructor(
         val MAC_PATTERN = Regex("""^([0-9A-F]{2}:){5}[0-9A-F]{2}$""")
         const val MAG_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG250"
         const val STALKER_ALT_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3"
+        const val STALKER_PLAYER_USER_AGENT = "Lavf53.32.100"
     }
 }
