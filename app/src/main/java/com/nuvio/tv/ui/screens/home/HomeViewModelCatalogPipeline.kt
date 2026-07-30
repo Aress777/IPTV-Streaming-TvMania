@@ -666,17 +666,13 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
 
         val computedDisplayRows = orderedRows.map { row ->
             val shouldKeepFullRowInModern = currentLayout == HomeLayout.MODERN
-            val gridTruncateLimit = 24
-            if (row.items.size > gridTruncateLimit && !shouldKeepFullRowInModern) {
+            if (row.items.size > 25 && !shouldKeepFullRowInModern) {
                 val key = row.legacyKey()
                 val cachedEntry = getTruncatedRowCacheEntry(key)
                 if (cachedEntry != null && cachedEntry.sourceRow === row) {
                     cachedEntry.truncatedRow
                 } else {
-                    val truncatedRow = row.copy(
-                        items = row.items.take(gridTruncateLimit),
-                        hasMore = true
-                    )
+                    val truncatedRow = row.copy(items = row.items.take(25))
                     putTruncatedRowCacheEntry(
                         key,
                         HomeViewModel.TruncatedRowCacheEntry(
@@ -790,7 +786,9 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         // based on the actual column count from GridCells.Adaptive layout info.
         // We use 8 as safe max columns (widest known config) to avoid cutting too early.
         val safeMaxColumns = 8
-        val maxDisplaySlots = safeMaxColumns * rowCount
+        val seeAllThreshold = safeMaxColumns * rowCount + 2
+        val maxWithSeeAll = safeMaxColumns * rowCount - 1
+        val maxWithoutSeeAll = safeMaxColumns * rowCount
         buildList {
             if (heroSectionEnabled && baseHeroItems.isNotEmpty()) {
                 add(GridItem.Hero(baseHeroItems))
@@ -809,10 +807,8 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
                                 addonId = row.addonId,
                                 type = row.apiType
                             ))
-                            // Show "See All" if there are more items than fit in the
-                            // displayed rows, or the API indicates more pages exist.
-                            val showSeeAll = row.hasMore || row.items.size > maxDisplaySlots
-                            val rawMax = if (showSeeAll) maxDisplaySlots - 1 else maxDisplaySlots
+                            val hasEnoughForSeeAll = row.hasMore || row.items.size >= seeAllThreshold
+                            val rawMax = if (hasEnoughForSeeAll) maxWithSeeAll else maxWithoutSeeAll
                             val displayItems = row.items.take(rawMax)
                             displayItems.forEach { item ->
                                 add(GridItem.Content(
@@ -822,7 +818,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
                                     catalogName = row.catalogName
                                 ))
                             }
-                            if (showSeeAll) {
+                            if (hasEnoughForSeeAll) {
                                 add(GridItem.SeeAll(
                                     catalogId = row.catalogId,
                                     addonId = row.addonId,

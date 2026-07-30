@@ -128,35 +128,16 @@ class LiveTvViewModel @Inject constructor(
                         "type" to "itv", "action" to "create_link", "cmd" to command,
                         "series" to "0", "forced_storage" to "undefined", "disable_ad" to "0", "download" to "0"
                     ))
-                    val responseCommand = response.optJSONObject("js")?.optString("cmd").orEmpty()
+                    val responseData = response.optJSONObject("js") ?: JSONObject()
+                    val responseCommand = responseData.optString("url")
+                        .ifBlank { responseData.optString("cmd") }
                     val url = resolveStalkerPlaybackUrl(portal, command, responseCommand)
                     check(url.startsWith("http://") || url.startsWith("https://")) {
                         "Portal did not return a playable stream."
                     }
-                    val streamOrigin = url.toHttpUrlOrNull()?.let { "${it.scheme}://${it.host}:${it.port}" }
-                    val portalOrigin = portal.toHttpUrlOrNull()?.let { "${it.scheme}://${it.host}:${it.port}" }
-                    val playbackHeaders = if (streamOrigin != null && portalOrigin != null && streamOrigin != portalOrigin) {
-                        mapOf(
-                            "User-Agent" to STALKER_STREAM_USER_AGENT,
-                            "Accept" to "*/*",
-                            "Range" to "bytes=0-",
-                            "Icy-MetaData" to "1",
-                            "Connection" to "keep-alive"
-                        )
-                    } else {
-                        mapOf(
-                            "Cookie" to "mac=$mac; stb_lang=en_US@rg=dezzzz; timezone=Europe/Bucharest",
-                            "User-Agent" to MAG_USER_AGENT,
-                            "X-User-Agent" to MAG_USER_AGENT,
-                            "Authorization" to "Bearer $token",
-                            "Origin" to portalOrigin.orEmpty(),
-                            "Referer" to portalOrigin.orEmpty()
-                        ).filterValues(String::isNotBlank)
-                    }
-                    channel.copy(
-                        streamUrl = url,
-                        headers = channel.headers + playbackHeaders
-                    )
+                    // MAC Stalker Player hands the resolved URL directly to VLC/SMPlayer.
+                    // Portal authentication is used only while generating this temporary URL.
+                    channel.copy(streamUrl = url, headers = emptyMap())
                 }
             }.onSuccess {
                 _uiState.update { state -> state.copy(isLoading = false) }
@@ -293,10 +274,22 @@ class LiveTvViewModel @Inject constructor(
         val url = portal.toHttpUrlOrNull()?.newBuilder() ?: error("Invalid portal URL.")
         params.forEach { (key, value) -> url.addQueryParameter(key, value) }
         url.addQueryParameter("JsHttpRequest", "1-xml")
+        val portalHttpUrl = portal.toHttpUrlOrNull() ?: error("Invalid portal URL.")
+        val portalOrigin = "${portalHttpUrl.scheme}://${portalHttpUrl.host}:${portalHttpUrl.port}"
+        val cookie = buildString {
+            append("mac=").append(java.net.URLEncoder.encode(mac, "UTF-8"))
+            append("; stb_lang=en; timezone=").append(java.net.URLEncoder.encode("Europe/Bucharest", "UTF-8"))
+            if (!token.isNullOrBlank()) append("; token=").append(java.net.URLEncoder.encode(token, "UTF-8"))
+        }
         val request = Request.Builder().url(url.build())
-            .header("Cookie", "mac=$mac; stb_lang=en_US; timezone=Europe/Bucharest")
-            .header("User-Agent", MAG_USER_AGENT)
-            .header("X-User-Agent", MAG_USER_AGENT)
+            .header("Accept", "*/*")
+            .header("Cookie", cookie)
+            .header("User-Agent", STALKER_ALT_USER_AGENT)
+            .header("X-User-Agent", "Model: MAG250; Link: WiFi")
+            .header("Referer", "$portalOrigin/stalker_portal/c/index.html")
+            .header("Accept-Language", "en-US,en;q=0.5")
+            .header("Pragma", "no-cache")
+            .header("Connection", "Close")
             .apply { if (!token.isNullOrBlank()) header("Authorization", "Bearer $token") }
             .build()
         httpClient.newCall(request).execute().use { response ->
@@ -318,6 +311,10 @@ class LiveTvViewModel @Inject constructor(
     private fun normalizeStalkerCommand(value: String): String {
         val trimmed = value.trim()
         if (trimmed.isBlank()) return ""
+        val prefixRemoved = trimmed.replace(Regex("(?i)^ffmpeg\\s*"), "")
+            .replace(Regex("(?i)^ffrt\\s*"), "")
+            .trim()
+        if (prefixRemoved != trimmed) return prefixRemoved
         val space = trimmed.indexOf(' ')
         if (space > 0) {
             val candidate = trimmed.substring(space + 1).trim()
@@ -345,7 +342,7 @@ class LiveTvViewModel @Inject constructor(
                 if (original.startsWith("http")) original + resolved else origin + basePath + original + resolved
             }
             resolved.startsWith("/") -> origin + basePath + resolved
-            else -> resolved
+            else -> origin + "/vod4/" + resolved.trimStart('/')
         }
     }
 
@@ -358,6 +355,6 @@ class LiveTvViewModel @Inject constructor(
         val ATTRIBUTE = Regex("""([\w-]+)="([^"]*)"""")
         val MAC_PATTERN = Regex("""^([0-9A-F]{2}:){5}[0-9A-F]{2}$""")
         const val MAG_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG250"
-        const val STALKER_STREAM_USER_AGENT = "KSPlayer"
+        const val STALKER_ALT_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C) AppleWebKit/533.3 (KHTML, like Gecko) MAG200 stbapp ver: 2 rev: 250 Safari/533.3"
     }
 }
