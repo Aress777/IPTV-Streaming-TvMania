@@ -12,6 +12,7 @@ import com.nuvio.tv.domain.repository.CatalogRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.delay
 import java.net.URLEncoder
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,8 +46,9 @@ class CatalogRepositoryImpl @Inject constructor(
             "Fetching catalog addonId=$addonId addonName=$addonName type=$type catalogId=$catalogId skip=$skip skipStep=$skipStep supportsSkip=$supportsSkip url=$url"
         )
 
-        when (val result = safeApiCall(context) { api.getCatalog(url) }) {
-            is NetworkResult.Success -> {
+        repeat(3) { attempt ->
+            when (val result = safeApiCall(context) { api.getCatalog(url) }) {
+                is NetworkResult.Success -> {
                 val items = result.data.metas.map { it.toDomain(type, addonBaseUrl) }.distinctBy { it.id }
                 Log.d(
                     TAG,
@@ -71,15 +73,21 @@ class CatalogRepositoryImpl @Inject constructor(
                     extraArgs = extraArgs
                 )
                 emit(NetworkResult.Success(catalogRow))
-            }
-            is NetworkResult.Error -> {
+                return@flow
+                }
+                is NetworkResult.Error -> {
                 Log.w(
                     TAG,
-                    "Catalog fetch failed addonId=$addonId type=$type catalogId=$catalogId code=${result.code} message=${result.message} url=$url"
+                    "Catalog fetch failed attempt=${attempt + 1}/3 addonId=$addonId type=$type catalogId=$catalogId code=${result.code} message=${result.message} url=$url"
                 )
-                emit(result)
+                    if (attempt == 2) {
+                        emit(result)
+                    } else {
+                        delay(750L * (attempt + 1))
+                    }
+                }
+                NetworkResult.Loading -> Unit
             }
-            NetworkResult.Loading -> { /* Already emitted */ }
         }
     }
 

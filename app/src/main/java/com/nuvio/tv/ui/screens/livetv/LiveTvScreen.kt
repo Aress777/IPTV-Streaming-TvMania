@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
@@ -47,8 +48,8 @@ fun LiveTvScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(NuvioTheme.colors.Background)
-            .padding(start = 56.dp, top = 40.dp, end = 48.dp, bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .padding(start = 36.dp, top = 24.dp, end = 30.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(text = stringResource(R.string.live_tv_title), style = MaterialTheme.typography.headlineLarge)
         when {
@@ -57,12 +58,12 @@ fun LiveTvScreen(
             state.playlists.isEmpty() -> Text(stringResource(R.string.live_tv_empty), color = NuvioTheme.colors.TextSecondary)
             else -> Row(
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(20.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 LazyColumn(
-                    modifier = Modifier.width(210.dp).fillMaxHeight().focusGroup(),
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.width(150.dp).fillMaxHeight().focusGroup(),
+                    contentPadding = PaddingValues(vertical = 2.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(state.playlists, key = { it.id }) { playlist ->
                         Card(
@@ -73,17 +74,17 @@ fun LiveTvScreen(
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(Modifier.padding(16.dp)) {
-                                Text(playlist.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text("${playlist.channels.size} channels", color = NuvioTheme.colors.TextSecondary)
+                            Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                                Text(playlist.name, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("${playlist.channels.size} channels", fontSize = 9.sp, color = NuvioTheme.colors.TextSecondary)
                             }
                         }
                     }
                 }
                 LazyColumn(
-                    modifier = Modifier.width(230.dp).fillMaxHeight().focusGroup(),
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.width(165.dp).fillMaxHeight().focusGroup(),
+                    contentPadding = PaddingValues(vertical = 2.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(state.groups, key = { it }) { group ->
                         val label = when (group) {
@@ -98,13 +99,13 @@ fun LiveTvScreen(
                                     else NuvioTheme.colors.Surface
                             ),
                             modifier = Modifier.fillMaxWidth()
-                        ) { Text(label, modifier = Modifier.padding(16.dp)) }
+                        ) { Text(label, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp)) }
                     }
                 }
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxHeight().focusGroup(),
-                    contentPadding = PaddingValues(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    contentPadding = PaddingValues(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (state.visibleChannels.isEmpty()) {
                         item { Text(stringResource(R.string.live_tv_no_channels)) }
@@ -135,25 +136,30 @@ private fun ChannelCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
                 model = channel.logoUrl,
                 contentDescription = null,
-                modifier = Modifier.size(54.dp)
+                modifier = Modifier.size(30.dp)
             )
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                Text(channel.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(channel.name, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (channel.group.isNotBlank()) {
-                    Text(channel.group, color = NuvioTheme.colors.TextSecondary)
+                    Text(channel.group, fontSize = 9.sp, color = NuvioTheme.colors.TextSecondary)
                 }
             }
-            Button(onClick = onFavorite) {
+            Button(
+                onClick = onFavorite,
+                modifier = Modifier.size(34.dp),
+                contentPadding = PaddingValues(6.dp)
+            ) {
                 Icon(
                     imageVector = if (favorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = stringResource(if (favorite) R.string.live_tv_unfavorite else R.string.live_tv_favorite)
+                    contentDescription = stringResource(if (favorite) R.string.live_tv_unfavorite else R.string.live_tv_favorite),
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
