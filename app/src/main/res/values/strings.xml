@@ -2885,4 +2885,6 @@
     <string name="live_tv_playlist_name">Playlist name</string>
     <string name="live_tv_add_playlist">Add playlist</string>
     <string name="live_tv_delete">Delete</string>
+    <string name="live_tv_stalker_portal">Portal URL (example: http://server/stalker_portal/c)</string>
+    <string name="live_tv_stalker_mac">MAC address</string>
 </resources>

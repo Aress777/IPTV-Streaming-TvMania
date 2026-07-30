@@ -40,6 +40,8 @@ fun LiveTvSettingsScreen(
     val state by viewModel.uiState.collectAsState()
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
+    var mac by remember { mutableStateOf("") }
+    var sourceType by remember { mutableStateOf(LiveTvPlaylistType.M3U) }
     Column(
         Modifier.fillMaxSize().background(NuvioTheme.colors.Background)
             .padding(start = 56.dp, top = 40.dp, end = 56.dp, bottom = 32.dp),
@@ -48,13 +50,28 @@ fun LiveTvSettingsScreen(
         Text(stringResource(R.string.live_tv_settings_title), style = MaterialTheme.typography.headlineLarge)
         Text(stringResource(R.string.live_tv_settings_description), color = NuvioTheme.colors.TextSecondary)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TvTextField(name, { name = it }, stringResource(R.string.live_tv_playlist_name), Modifier.weight(.35f))
-            TvTextField(url, { url = it }, stringResource(R.string.live_tv_source_hint), Modifier.weight(.65f))
+            Button(onClick = { sourceType = LiveTvPlaylistType.M3U }) {
+                Text(if (sourceType == LiveTvPlaylistType.M3U) "✓ M3U" else "M3U")
+            }
+            Button(onClick = { sourceType = LiveTvPlaylistType.STALKER }) {
+                Text(if (sourceType == LiveTvPlaylistType.STALKER) "✓ Stalker Portal" else "Stalker Portal")
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TvTextField(name, { name = it }, stringResource(R.string.live_tv_playlist_name), Modifier.weight(.25f))
+            TvTextField(
+                url, { url = it },
+                stringResource(if (sourceType == LiveTvPlaylistType.M3U) R.string.live_tv_source_hint else R.string.live_tv_stalker_portal),
+                Modifier.weight(.5f)
+            )
+            if (sourceType == LiveTvPlaylistType.STALKER) {
+                TvTextField(mac, { mac = it }, stringResource(R.string.live_tv_stalker_mac), Modifier.weight(.3f))
+            }
             Button(
                 enabled = !state.isLoading,
                 onClick = {
-                    viewModel.savePlaylist(name, url)
-                    name = ""; url = ""
+                    if (sourceType == LiveTvPlaylistType.M3U) viewModel.savePlaylist(name, url)
+                    else viewModel.saveStalkerPlaylist(name, url, mac)
                 }
             ) { Text(stringResource(R.string.live_tv_add_playlist)) }
         }
@@ -72,10 +89,18 @@ fun LiveTvSettingsScreen(
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(playlist.name)
-                            Text("${playlist.channels.size} channels", color = NuvioTheme.colors.TextSecondary)
+                            Text("${playlist.type.name} • ${playlist.channels.size} channels", color = NuvioTheme.colors.TextSecondary)
                             Text(playlist.sourceUrl, color = NuvioTheme.colors.TextSecondary, maxLines = 1)
                         }
-                        Button(onClick = { viewModel.savePlaylist(playlist.name, playlist.sourceUrl, playlist.id) }) {
+                        Button(onClick = {
+                            if (playlist.type == LiveTvPlaylistType.M3U) {
+                                viewModel.savePlaylist(playlist.name, playlist.sourceUrl, playlist.id)
+                            } else {
+                                viewModel.saveStalkerPlaylist(
+                                    playlist.name, playlist.sourceUrl, playlist.macAddress.orEmpty(), playlist.id
+                                )
+                            }
+                        }) {
                             Text(stringResource(R.string.live_tv_refresh))
                         }
                         Button(onClick = { viewModel.deletePlaylist(playlist.id) }) {

@@ -113,7 +113,7 @@ fun LiveTvScreen(
                         ChannelCard(
                             channel = channel,
                             favorite = channel.streamUrl in state.favoriteUrls,
-                            onClick = { onPlayChannel(channel) },
+                            onClick = { viewModel.resolveForPlayback(channel, onPlayChannel) },
                             onFavorite = { viewModel.toggleFavorite(channel) }
                         )
                     }
