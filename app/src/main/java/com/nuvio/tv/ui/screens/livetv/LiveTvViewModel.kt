@@ -124,6 +124,10 @@ class LiveTvViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             runCatching {
                 withContext(Dispatchers.IO) {
+                    val directUrl = normalizeStalkerCommand(command)
+                    if (isDirectStalkerUrl(directUrl)) {
+                        return@withContext channel.copy(streamUrl = directUrl, headers = emptyMap())
+                    }
                     val session = openStalkerSession(portal, mac)
                     val response = stalkerRequest(session, mapOf(
                         "type" to "itv", "action" to "create_link", "cmd" to command,
@@ -361,6 +365,17 @@ class LiveTvViewModel @Inject constructor(
             resolved.startsWith("/") -> origin + basePath + resolved
             else -> origin + "/vod4/" + resolved.trimStart('/')
         }
+    }
+
+    /**
+     * Some Ministra portals return an already authenticated playback URL in the channel command.
+     * Sending that URL through create_link again can erase its stream id and produce a URL that
+     * connects but never yields media. Localhost and bare /ch/ commands are portal placeholders.
+     */
+    private fun isDirectStalkerUrl(value: String): Boolean {
+        val url = value.toHttpUrlOrNull() ?: return false
+        if (url.host.equals("localhost", ignoreCase = true) || url.host == "127.0.0.1") return false
+        return url.querySize > 0 || url.encodedPath.substringAfterLast('/').contains('.')
     }
 
     private fun sha1(value: String): String = MessageDigest.getInstance("SHA-1")

@@ -290,9 +290,11 @@ internal suspend fun HomeViewModel.loadAllCatalogsPipeline(
         if (!_uiState.value.layoutPreferencesReady) {
             _uiState.first { it.layoutPreferencesReady }
         }
-        val isGridLayout = _uiState.value.homeLayout == HomeLayout.GRID
-        val eagerHomeCatalogs = if (isGridLayout) catalogsToLoad else catalogsToLoad.take(eagerCatalogLoadCount)
-        val lazyHomeCatalogs = if (isGridLayout) emptyList() else catalogsToLoad.drop(eagerCatalogLoadCount)
+        // Android TV focus traversal is not a reliable network-loading trigger. On some remotes
+        // the deferred rows never receive the focus callback and stay as shimmer placeholders.
+        // The semaphore below still bounds concurrency, so eagerly enqueue every Home catalog.
+        val eagerHomeCatalogs = catalogsToLoad
+        val lazyHomeCatalogs = emptyList<Pair<Addon, CatalogDescriptor>>()
 
         // Build placeholder descriptors for lazy catalogs
         synchronized(catalogStateLock) {
@@ -666,13 +668,17 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
 
         val computedDisplayRows = orderedRows.map { row ->
             val shouldKeepFullRowInModern = currentLayout == HomeLayout.MODERN
-            if (row.items.size > 25 && !shouldKeepFullRowInModern) {
+            val gridTruncateLimit = 24
+            if (row.items.size > gridTruncateLimit && !shouldKeepFullRowInModern) {
                 val key = row.legacyKey()
                 val cachedEntry = getTruncatedRowCacheEntry(key)
                 if (cachedEntry != null && cachedEntry.sourceRow === row) {
                     cachedEntry.truncatedRow
                 } else {
-                    val truncatedRow = row.copy(items = row.items.take(25))
+                    val truncatedRow = row.copy(
+                        items = row.items.take(gridTruncateLimit),
+                        hasMore = true
+                    )
                     putTruncatedRowCacheEntry(
                         key,
                         HomeViewModel.TruncatedRowCacheEntry(
@@ -786,9 +792,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
         // based on the actual column count from GridCells.Adaptive layout info.
         // We use 8 as safe max columns (widest known config) to avoid cutting too early.
         val safeMaxColumns = 8
-        val seeAllThreshold = safeMaxColumns * rowCount + 2
-        val maxWithSeeAll = safeMaxColumns * rowCount - 1
-        val maxWithoutSeeAll = safeMaxColumns * rowCount
+        val maxDisplaySlots = safeMaxColumns * rowCount
         buildList {
             if (heroSectionEnabled && baseHeroItems.isNotEmpty()) {
                 add(GridItem.Hero(baseHeroItems))
@@ -807,8 +811,8 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
                                 addonId = row.addonId,
                                 type = row.apiType
                             ))
-                            val hasEnoughForSeeAll = row.hasMore || row.items.size >= seeAllThreshold
-                            val rawMax = if (hasEnoughForSeeAll) maxWithSeeAll else maxWithoutSeeAll
+                            val showSeeAll = row.hasMore || row.items.size > maxDisplaySlots
+                            val rawMax = if (showSeeAll) maxDisplaySlots - 1 else maxDisplaySlots
                             val displayItems = row.items.take(rawMax)
                             displayItems.forEach { item ->
                                 add(GridItem.Content(
@@ -818,7 +822,7 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
                                     catalogName = row.catalogName
                                 ))
                             }
-                            if (hasEnoughForSeeAll) {
+                            if (showSeeAll) {
                                 add(GridItem.SeeAll(
                                     catalogId = row.catalogId,
                                     addonId = row.addonId,
