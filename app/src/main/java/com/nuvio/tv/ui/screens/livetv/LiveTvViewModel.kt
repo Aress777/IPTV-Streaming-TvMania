@@ -7,7 +7,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.net.URI
 import java.security.MessageDigest
-import java.util.Base64
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +41,6 @@ class LiveTvViewModel @Inject constructor(
         _uiState.update {
             it.copy(selectedPlaylistId = id, selectedGroup = LiveTvUiState.ALL_CHANNELS)
         }
-        refreshVisibleEpg()
     }
     fun selectGlobalFavorites() {
         _uiState.update {
@@ -51,7 +49,6 @@ class LiveTvViewModel @Inject constructor(
     }
     fun selectGroup(group: String) {
         _uiState.update { it.copy(selectedGroup = group) }
-        refreshVisibleEpg()
     }
     fun clearError() = _uiState.update { it.copy(error = null) }
 
@@ -61,36 +58,6 @@ class LiveTvViewModel @Inject constructor(
         }
         preferences.edit().putStringSet(KEY_FAVORITES, favorites).apply()
         _uiState.update { it.copy(favoriteUrls = favorites) }
-    }
-
-    fun refreshEpg(channel: LiveTvChannel) {
-        val playlist = _uiState.value.playlists.firstOrNull { saved ->
-            saved.channels.any { it.streamUrl == channel.streamUrl }
-        } ?: return
-        if (playlist.type != LiveTvPlaylistType.XTREAM || channel.remoteId == null) return
-        val username = playlist.username ?: return
-        val password = playlist.password ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            val update = runCatching {
-                val listings = xtreamRequest(
-                    playlist.sourceUrl, username, password, "get_short_epg", channel.remoteId
-                ).optJSONArray("epg_listings") ?: JSONArray()
-                decodeEpgText(listings.optJSONObject(0)?.optString("title").orEmpty()) to
-                    decodeEpgText(listings.optJSONObject(1)?.optString("title").orEmpty())
-            }.getOrNull() ?: return@launch
-            withContext(Dispatchers.Main) {
-                val refreshed = _uiState.value.playlists.map { saved ->
-                    if (saved.id != playlist.id) saved else saved.copy(channels = saved.channels.map {
-                        if (it.streamUrl == channel.streamUrl) it.copy(
-                            epgNow = update.first.takeIf(String::isNotBlank),
-                            epgNext = update.second.takeIf(String::isNotBlank)
-                        ) else it
-                    })
-                }
-                persist(refreshed)
-                _uiState.update { it.copy(playlists = refreshed) }
-            }
-        }
     }
 
     fun savePlaylist(name: String, sourceUrl: String, existingId: String? = null) {
@@ -252,7 +219,6 @@ class LiveTvViewModel @Inject constructor(
                             put("group", channel.group); put("headers", JSONObject(channel.headers))
                             put("stalkerPortal", channel.stalkerPortalUrl); put("stalkerMac", channel.stalkerMac)
                             put("stalkerCommand", channel.stalkerCommand)
-                            put("remoteId", channel.remoteId); put("epgNow", channel.epgNow); put("epgNext", channel.epgNext)
                         })
                     }
                 })
@@ -278,10 +244,7 @@ class LiveTvViewModel @Inject constructor(
                     headersJson.keys().asSequence().associateWith { headersJson.getString(it) },
                     channel.optString("stalkerPortal").takeIf { it.isNotBlank() && it != "null" },
                     channel.optString("stalkerMac").takeIf { it.isNotBlank() && it != "null" },
-                    channel.optString("stalkerCommand").takeIf { it.isNotBlank() && it != "null" },
-                    channel.optString("remoteId").takeIf { it.isNotBlank() && it != "null" },
-                    channel.optString("epgNow").takeIf { it.isNotBlank() && it != "null" },
-                    channel.optString("epgNext").takeIf { it.isNotBlank() && it != "null" }
+                    channel.optString("stalkerCommand").takeIf { it.isNotBlank() && it != "null" }
                 )
             }
             LiveTvPlaylist(
@@ -376,8 +339,7 @@ class LiveTvViewModel @Inject constructor(
                 name = item.optString("name").ifBlank { "Live channel" },
                 streamUrl = "$portal/live/${urlEncode(username)}/${urlEncode(password)}/$streamId.$extension",
                 logoUrl = item.optString("stream_icon").takeIf(String::isNotBlank),
-                group = categoryNames[item.optString("category_id")] ?: "Other",
-                remoteId = streamId
+                group = categoryNames[item.optString("category_id")] ?: "Other"
             )
         }.distinctBy { it.streamUrl }
     }
@@ -400,48 +362,6 @@ class LiveTvViewModel @Inject constructor(
                 JSONObject().put("items", JSONArray(body))
             } else JSONObject(body)
         }
-    }
-
-    private fun refreshVisibleEpg() {
-        val playlist = _uiState.value.selectedPlaylist ?: return
-        if (playlist.type != LiveTvPlaylistType.XTREAM) return
-        val username = playlist.username ?: return
-        val password = playlist.password ?: return
-        val targets = _uiState.value.visibleChannels.take(80).filter { it.remoteId != null }
-        if (targets.isEmpty()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val updates = targets.mapNotNull { channel ->
-                runCatching {
-                    val response = xtreamRequest(
-                        playlist.sourceUrl, username, password, "get_short_epg", channel.remoteId
-                    )
-                    val listings = response.optJSONArray("epg_listings") ?: JSONArray()
-                    val now = listings.optJSONObject(0)?.optString("title")?.let(::decodeEpgText)
-                    val next = listings.optJSONObject(1)?.optString("title")?.let(::decodeEpgText)
-                    channel.streamUrl to (now to next)
-                }.getOrNull()
-            }.toMap()
-            if (updates.isEmpty()) return@launch
-            withContext(Dispatchers.Main) {
-                val refreshed = _uiState.value.playlists.map { saved ->
-                    if (saved.id != playlist.id) saved else saved.copy(
-                        channels = saved.channels.map { channel ->
-                            updates[channel.streamUrl]?.let { (now, next) ->
-                                channel.copy(epgNow = now, epgNext = next)
-                            } ?: channel
-                        }
-                    )
-                }
-                persist(refreshed)
-                _uiState.update { it.copy(playlists = refreshed) }
-            }
-        }
-    }
-
-    private fun decodeEpgText(value: String): String {
-        if (value.isBlank()) return ""
-        return runCatching { String(Base64.getDecoder().decode(value), Charsets.UTF_8) }
-            .getOrDefault(value)
     }
 
     private fun urlEncode(value: String): String =

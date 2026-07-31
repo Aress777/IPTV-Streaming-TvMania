@@ -8,10 +8,7 @@ data class LiveTvChannel(
     val headers: Map<String, String> = emptyMap(),
     val stalkerPortalUrl: String? = null,
     val stalkerMac: String? = null,
-    val stalkerCommand: String? = null,
-    val remoteId: String? = null,
-    val epgNow: String? = null,
-    val epgNext: String? = null
+    val stalkerCommand: String? = null
 )
 
 data class LiveTvPlaylist(

@@ -22,12 +22,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -53,8 +49,6 @@ fun LiveTvScreen(
     viewModel: LiveTvViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    var focusedUrl by remember { mutableStateOf<String?>(null) }
-    val focusedChannel = state.visibleChannels.firstOrNull { it.streamUrl == focusedUrl }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -128,8 +122,6 @@ fun LiveTvScreen(
                     }
                 }
                 Column(Modifier.weight(1f).fillMaxHeight()) {
-                    EpgPanel(focusedChannel)
-                    Spacer(Modifier.size(6.dp))
                     LazyColumn(
                         modifier = Modifier.weight(1f).fillMaxWidth().focusGroup(),
                         contentPadding = PaddingValues(2.dp),
@@ -143,11 +135,7 @@ fun LiveTvScreen(
                                 channel = channel,
                                 favorite = channel.streamUrl in state.favoriteUrls,
                                 onClick = { viewModel.resolveForPlayback(channel, onPlayChannel) },
-                                onFavorite = { viewModel.toggleFavorite(channel) },
-                                onFocused = {
-                                    focusedUrl = channel.streamUrl
-                                    viewModel.refreshEpg(channel)
-                                }
+                                onFavorite = { viewModel.toggleFavorite(channel) }
                             )
                         }
                     }
@@ -162,14 +150,12 @@ private fun ChannelCard(
     channel: LiveTvChannel,
     favorite: Boolean,
     onClick: () -> Unit,
-    onFavorite: () -> Unit,
-    onFocused: () -> Unit
+    onFavorite: () -> Unit
 ) {
     Card(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .onFocusChanged { if (it.isFocused) onFocused() }
             .onPreviewKeyEvent {
                 if (it.type == KeyEventType.KeyDown && it.key == Key.DirectionRight) {
                     onFavorite()
@@ -192,12 +178,6 @@ private fun ChannelCard(
                 if (channel.group.isNotBlank()) {
                     Text(channel.group, fontSize = 9.sp, color = NuvioTheme.colors.TextSecondary)
                 }
-                channel.epgNow?.takeIf { it.isNotBlank() }?.let {
-                    Text("Now: $it", fontSize = 9.sp, color = NuvioTheme.colors.Primary, maxLines = 1)
-                }
-                channel.epgNext?.takeIf { it.isNotBlank() }?.let {
-                    Text("Next: $it", fontSize = 8.sp, color = NuvioTheme.colors.TextSecondary, maxLines = 1)
-                }
             }
             Button(
                 onClick = onFavorite,
@@ -211,30 +191,5 @@ private fun ChannelCard(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun EpgPanel(channel: LiveTvChannel?) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(NuvioTheme.colors.Surface)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-            Text("EPG • ${channel?.name ?: "select a channel"}", fontSize = 12.sp, color = NuvioTheme.colors.Primary)
-            Text(
-                "NOW  ${channel?.epgNow ?: "No programme information"}",
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                "NEXT  ${channel?.epgNext ?: "—"}",
-                fontSize = 10.sp,
-                color = NuvioTheme.colors.TextSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
     }
 }
