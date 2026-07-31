@@ -24,6 +24,8 @@ TvMania is a modern streaming player designed specifically for Android TV.
 
 It supports M3U playlists, Stalker portals and Xtream Codes portals, with persistent playlists, EPG programme information and global channel favorites. It can also integrate with the Stremio addon ecosystem for content discovery and source resolution through user-installed extensions.
 
+TvMania retains all media-player features and capabilities supported by the original NuvioTV project, while extending it with a complete IPTV experience.
+
 Built with Kotlin and optimized for a TV-first viewing experience.
 
 ## Installation
