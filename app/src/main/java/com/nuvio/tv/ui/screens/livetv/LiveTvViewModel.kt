@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.net.URI
 import java.security.MessageDigest
+import java.util.Base64
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -37,10 +38,16 @@ class LiveTvViewModel @Inject constructor(
     )
     val uiState: StateFlow<LiveTvUiState> = _uiState.asStateFlow()
 
-    fun selectPlaylist(id: String) = _uiState.update {
-        it.copy(selectedPlaylistId = id, selectedGroup = LiveTvUiState.ALL_CHANNELS)
+    fun selectPlaylist(id: String) {
+        _uiState.update {
+            it.copy(selectedPlaylistId = id, selectedGroup = LiveTvUiState.ALL_CHANNELS)
+        }
+        refreshVisibleEpg()
     }
-    fun selectGroup(group: String) = _uiState.update { it.copy(selectedGroup = group) }
+    fun selectGroup(group: String) {
+        _uiState.update { it.copy(selectedGroup = group) }
+        refreshVisibleEpg()
+    }
     fun clearError() = _uiState.update { it.copy(error = null) }
 
     fun toggleFavorite(channel: LiveTvChannel) {
@@ -112,6 +119,47 @@ class LiveTvViewModel @Inject constructor(
         }
     }
 
+    fun saveXtreamPlaylist(
+        name: String,
+        portalUrl: String,
+        username: String,
+        password: String,
+        existingId: String? = null
+    ) {
+        val portal = portalUrl.trim().trimEnd('/')
+        val user = username.trim()
+        val pass = password.trim()
+        if ((!portal.startsWith("http://") && !portal.startsWith("https://")) || user.isBlank() || pass.isBlank()) {
+            _uiState.update { it.copy(error = "Enter a valid portal URL, username and password.") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            runCatching { withContext(Dispatchers.IO) { loadXtreamChannels(portal, user, pass) } }
+                .onSuccess { channels ->
+                    if (channels.isEmpty()) {
+                        _uiState.update { it.copy(isLoading = false, error = "The Xtream portal returned no live channels.") }
+                        return@onSuccess
+                    }
+                    val id = existingId ?: UUID.randomUUID().toString()
+                    val playlist = LiveTvPlaylist(
+                        id = id,
+                        name = name.trim().ifBlank { "Xtream ${_uiState.value.playlists.size + 1}" },
+                        sourceUrl = portal,
+                        channels = channels,
+                        type = LiveTvPlaylistType.XTREAM,
+                        username = user,
+                        password = pass
+                    )
+                    val updated = _uiState.value.playlists.filterNot { it.id == id } + playlist
+                    persist(updated)
+                    _uiState.update { it.copy(playlists = updated, selectedPlaylistId = id, isLoading = false) }
+                }.onFailure { error ->
+                    _uiState.update { it.copy(isLoading = false, error = error.message ?: "Xtream portal error") }
+                }
+        }
+    }
+
     fun resolveForPlayback(channel: LiveTvChannel, onReady: (LiveTvChannel) -> Unit) {
         val portal = channel.stalkerPortalUrl
         val mac = channel.stalkerMac
@@ -169,10 +217,12 @@ class LiveTvViewModel @Inject constructor(
                             put("group", channel.group); put("headers", JSONObject(channel.headers))
                             put("stalkerPortal", channel.stalkerPortalUrl); put("stalkerMac", channel.stalkerMac)
                             put("stalkerCommand", channel.stalkerCommand)
+                            put("remoteId", channel.remoteId); put("epgNow", channel.epgNow); put("epgNext", channel.epgNext)
                         })
                     }
                 })
                 put("type", playlist.type.name); put("mac", playlist.macAddress)
+                put("username", playlist.username); put("password", playlist.password)
             })
         }
         preferences.edit().putString(KEY_PLAYLISTS, array.toString()).apply()
@@ -193,14 +243,19 @@ class LiveTvViewModel @Inject constructor(
                     headersJson.keys().asSequence().associateWith { headersJson.getString(it) },
                     channel.optString("stalkerPortal").takeIf { it.isNotBlank() && it != "null" },
                     channel.optString("stalkerMac").takeIf { it.isNotBlank() && it != "null" },
-                    channel.optString("stalkerCommand").takeIf { it.isNotBlank() && it != "null" }
+                    channel.optString("stalkerCommand").takeIf { it.isNotBlank() && it != "null" },
+                    channel.optString("remoteId").takeIf { it.isNotBlank() && it != "null" },
+                    channel.optString("epgNow").takeIf { it.isNotBlank() && it != "null" },
+                    channel.optString("epgNext").takeIf { it.isNotBlank() && it != "null" }
                 )
             }
             LiveTvPlaylist(
                 item.getString("id"), item.getString("name"), item.getString("url"), channels,
                 item.optLong("updatedAt"),
                 runCatching { LiveTvPlaylistType.valueOf(item.optString("type", "M3U")) }.getOrDefault(LiveTvPlaylistType.M3U),
-                item.optString("mac").takeIf { it.isNotBlank() && it != "null" }
+                item.optString("mac").takeIf { it.isNotBlank() && it != "null" },
+                item.optString("username").takeIf { it.isNotBlank() && it != "null" },
+                item.optString("password").takeIf { it.isNotBlank() && it != "null" }
             )
         }
     }.getOrDefault(emptyList())
@@ -262,6 +317,100 @@ class LiveTvViewModel @Inject constructor(
             )
         }.distinctBy { it.streamUrl }
     }
+
+    private fun loadXtreamChannels(portal: String, username: String, password: String): List<LiveTvChannel> {
+        val auth = xtreamRequest(portal, username, password)
+        val userInfo = auth.optJSONObject("user_info") ?: error("Invalid Xtream response.")
+        check(userInfo.optString("auth") == "1" || userInfo.optInt("auth") == 1) {
+            userInfo.optString("message").ifBlank { "Xtream login was rejected." }
+        }
+
+        val categories = xtreamRequest(portal, username, password, "get_live_categories")
+        val categoryNames = mutableMapOf<String, String>()
+        val categoryArray = categories.optJSONArray("items") ?: JSONArray()
+        for (i in 0 until categoryArray.length()) {
+            val item = categoryArray.optJSONObject(i) ?: continue
+            categoryNames[item.optString("category_id")] = item.optString("category_name", "Other")
+        }
+        val streams = xtreamRequest(portal, username, password, "get_live_streams").optJSONArray("items") ?: JSONArray()
+        return (0 until streams.length()).mapNotNull { index ->
+            val item = streams.optJSONObject(index) ?: return@mapNotNull null
+            val streamId = item.optString("stream_id").ifBlank { return@mapNotNull null }
+            val extension = item.optString("container_extension").ifBlank { "ts" }
+            LiveTvChannel(
+                name = item.optString("name").ifBlank { "Live channel" },
+                streamUrl = "$portal/live/${urlEncode(username)}/${urlEncode(password)}/$streamId.$extension",
+                logoUrl = item.optString("stream_icon").takeIf(String::isNotBlank),
+                group = categoryNames[item.optString("category_id")] ?: "Other",
+                remoteId = streamId
+            )
+        }.distinctBy { it.streamUrl }
+    }
+
+    private fun xtreamRequest(
+        portal: String,
+        username: String,
+        password: String,
+        action: String? = null,
+        streamId: String? = null
+    ): JSONObject {
+        val builder = "$portal/player_api.php".toHttpUrlOrNull()?.newBuilder() ?: error("Invalid Xtream URL.")
+        builder.addQueryParameter("username", username).addQueryParameter("password", password)
+        action?.let { builder.addQueryParameter("action", it) }
+        streamId?.let { builder.addQueryParameter("stream_id", it) }
+        httpClient.newCall(Request.Builder().url(builder.build()).build()).execute().use { response ->
+            check(response.isSuccessful) { "Xtream HTTP ${response.code}" }
+            val body = response.body?.string().orEmpty()
+            return if (body.trimStart().startsWith("[")) {
+                JSONObject().put("items", JSONArray(body))
+            } else JSONObject(body)
+        }
+    }
+
+    private fun refreshVisibleEpg() {
+        val playlist = _uiState.value.selectedPlaylist ?: return
+        if (playlist.type != LiveTvPlaylistType.XTREAM) return
+        val username = playlist.username ?: return
+        val password = playlist.password ?: return
+        val targets = _uiState.value.visibleChannels.take(80).filter { it.remoteId != null }
+        if (targets.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val updates = targets.mapNotNull { channel ->
+                runCatching {
+                    val response = xtreamRequest(
+                        playlist.sourceUrl, username, password, "get_short_epg", channel.remoteId
+                    )
+                    val listings = response.optJSONArray("epg_listings") ?: JSONArray()
+                    val now = listings.optJSONObject(0)?.optString("title")?.let(::decodeEpgText)
+                    val next = listings.optJSONObject(1)?.optString("title")?.let(::decodeEpgText)
+                    channel.streamUrl to (now to next)
+                }.getOrNull()
+            }.toMap()
+            if (updates.isEmpty()) return@launch
+            withContext(Dispatchers.Main) {
+                val refreshed = _uiState.value.playlists.map { saved ->
+                    if (saved.id != playlist.id) saved else saved.copy(
+                        channels = saved.channels.map { channel ->
+                            updates[channel.streamUrl]?.let { (now, next) ->
+                                channel.copy(epgNow = now, epgNext = next)
+                            } ?: channel
+                        }
+                    )
+                }
+                persist(refreshed)
+                _uiState.update { it.copy(playlists = refreshed) }
+            }
+        }
+    }
+
+    private fun decodeEpgText(value: String): String {
+        if (value.isBlank()) return ""
+        return runCatching { String(Base64.getDecoder().decode(value), Charsets.UTF_8) }
+            .getOrDefault(value)
+    }
+
+    private fun urlEncode(value: String): String =
+        java.net.URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
     private fun openStalkerSession(portal: String, mac: String): StalkerSession {
         val session = StalkerSession(portal = portal, mac = mac)

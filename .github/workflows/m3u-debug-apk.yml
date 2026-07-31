@@ -1,4 +1,4 @@
-name: Build NuvioTV M3U APK
+name: Build TvMania APK
 
 on:
   workflow_dispatch:
@@ -44,7 +44,7 @@ jobs:
         run: ./gradlew :app:assembleFullDebug --stacktrace
       - uses: actions/upload-artifact@v6
         with:
-          name: nuviotv-m3u-debug-apk
+          name: tvmania-debug-apk
           path: app/build/outputs/apk/full/debug/*.apk
           if-no-files-found: error
           retention-days: 14

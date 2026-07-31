@@ -150,6 +150,12 @@ private fun ChannelCard(
                 if (channel.group.isNotBlank()) {
                     Text(channel.group, fontSize = 9.sp, color = NuvioTheme.colors.TextSecondary)
                 }
+                channel.epgNow?.takeIf { it.isNotBlank() }?.let {
+                    Text("Now: $it", fontSize = 9.sp, color = NuvioTheme.colors.Primary, maxLines = 1)
+                }
+                channel.epgNext?.takeIf { it.isNotBlank() }?.let {
+                    Text("Next: $it", fontSize = 8.sp, color = NuvioTheme.colors.TextSecondary, maxLines = 1)
+                }
             }
             Button(
                 onClick = onFavorite,

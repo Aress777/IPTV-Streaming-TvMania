@@ -8,7 +8,10 @@ data class LiveTvChannel(
     val headers: Map<String, String> = emptyMap(),
     val stalkerPortalUrl: String? = null,
     val stalkerMac: String? = null,
-    val stalkerCommand: String? = null
+    val stalkerCommand: String? = null,
+    val remoteId: String? = null,
+    val epgNow: String? = null,
+    val epgNext: String? = null
 )
 
 data class LiveTvPlaylist(
@@ -18,10 +21,12 @@ data class LiveTvPlaylist(
     val channels: List<LiveTvChannel>,
     val updatedAt: Long = System.currentTimeMillis(),
     val type: LiveTvPlaylistType = LiveTvPlaylistType.M3U,
-    val macAddress: String? = null
+    val macAddress: String? = null,
+    val username: String? = null,
+    val password: String? = null
 )
 
-enum class LiveTvPlaylistType { M3U, STALKER }
+enum class LiveTvPlaylistType { M3U, STALKER, XTREAM }
 
 data class LiveTvUiState(
     val playlists: List<LiveTvPlaylist> = emptyList(),
