@@ -139,6 +139,8 @@ class HomeViewModel @Inject constructor(
 
     internal val _loadingCatalogs = MutableStateFlow<Set<String>>(emptySet())
     val loadingCatalogs: StateFlow<Set<String>> = _loadingCatalogs.asStateFlow()
+    internal val _catalogLoadErrors = MutableStateFlow<Map<String, String>>(emptyMap())
+    val catalogLoadErrors: StateFlow<Map<String, String>> = _catalogLoadErrors.asStateFlow()
 
     internal val _enrichingItemId = MutableStateFlow<String?>(null)
     val enrichingItemId: StateFlow<String?> = _enrichingItemId.asStateFlow()
@@ -170,6 +172,7 @@ class HomeViewModel @Inject constructor(
     internal val catalogLoadSemaphore = Semaphore(MAX_CATALOG_LOAD_CONCURRENCY)
     internal var pendingCatalogLoads = 0
     internal val activeCatalogLoadJobs = mutableSetOf<Job>()
+    internal val initialCatalogLoadsInFlight: MutableSet<String> = ConcurrentHashMap.newKeySet()
     internal var activeCatalogLoadSignature: String? = null
     internal var catalogLoadGeneration: Long = 0L
     internal var catalogsLoadInProgress: Boolean = false
@@ -719,6 +722,39 @@ class HomeViewModel @Inject constructor(
         val generation = catalogLoadGeneration
         pendingCatalogLoads = (pendingCatalogLoads + 1)
         loadCatalogPipeline(addon, catalog, generation)
+    }
+
+    /**
+     * Loads a Home catalog directly from the current addon manifest.
+     *
+     * CatalogSeeAll cannot rely on pendingLazyCatalogs because Home catalogs are
+     * currently all scheduled eagerly and the lazy map is intentionally empty.
+     */
+    fun requestCatalogLoad(
+        addonId: String,
+        type: String,
+        catalogId: String,
+        forceRetry: Boolean = false
+    ) {
+        val key = catalogKey(addonId = addonId, type = type, catalogId = catalogId)
+        if (!forceRetry && readCatalogRow(key) != null) return
+        if (key in initialCatalogLoadsInFlight) return
+
+        val addon = addonsCache.firstOrNull { it.id == addonId }
+        val catalog = addon?.catalogs?.firstOrNull {
+            it.id == catalogId && it.apiType == type
+        }
+
+        if (addon == null || catalog == null) {
+            _catalogLoadErrors.update {
+                it + (key to "Catalogul nu mai este disponibil în addon-ul instalat.")
+            }
+            return
+        }
+
+        _catalogLoadErrors.update { it - key }
+        pendingCatalogLoads = (pendingCatalogLoads + 1)
+        loadCatalogPipeline(addon, catalog, catalogLoadGeneration)
     }
 
     /**

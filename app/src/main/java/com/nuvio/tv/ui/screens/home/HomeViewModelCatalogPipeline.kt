@@ -407,6 +407,12 @@ internal fun HomeViewModel.loadCatalogPipeline(
     catalog: CatalogDescriptor,
     generation: Long
 ) {
+    val loadKey = catalogKey(
+        addonId = addon.id,
+        type = catalog.apiType,
+        catalogId = catalog.id
+    )
+    initialCatalogLoadsInFlight.add(loadKey)
     val loadJob = viewModelScope.launch {
         var hasCountedCompletion = false
         catalogLoadSemaphore.withPermit {
@@ -431,15 +437,11 @@ internal fun HomeViewModel.loadCatalogPipeline(
                 if (generation != catalogLoadGeneration) return@collect
                 when (result) {
                     is NetworkResult.Success -> {
-                        val key = catalogKey(
-                            addonId = addon.id,
-                            type = catalog.apiType,
-                            catalogId = catalog.id
-                        )
-                        replaceCatalogRow(key, result.data)
+                        replaceCatalogRow(loadKey, result.data)
+                        _catalogLoadErrors.update { it - loadKey }
                         // Remove placeholder descriptor now that real data is available
                         synchronized(catalogStateLock) {
-                            placeholderDescriptors.removeAll { it.catalogKey == key }
+                            placeholderDescriptors.removeAll { it.catalogKey == loadKey }
                         }
                         if (!hasCountedCompletion) {
                             pendingCatalogLoads = (pendingCatalogLoads - 1).coerceAtLeast(0)
@@ -467,14 +469,16 @@ internal fun HomeViewModel.loadCatalogPipeline(
                         // pendingCatalogLoads==0 trigger the update.
                     }
                     is NetworkResult.Error -> {
-                        val errorKey = catalogKey(
-                            addonId = addon.id,
-                            type = catalog.apiType,
-                            catalogId = catalog.id
-                        )
+                        _catalogLoadErrors.update {
+                            it + (
+                                loadKey to result.message.ifBlank {
+                                    "Catalogul nu a putut fi încărcat."
+                                }
+                            )
+                        }
                         // Remove placeholder on error so it doesn't show forever
                         synchronized(catalogStateLock) {
-                            placeholderDescriptors.removeAll { it.catalogKey == errorKey }
+                            placeholderDescriptors.removeAll { it.catalogKey == loadKey }
                         }
                         if (!hasCountedCompletion) {
                             pendingCatalogLoads = (pendingCatalogLoads - 1).coerceAtLeast(0)
@@ -498,6 +502,9 @@ internal fun HomeViewModel.loadCatalogPipeline(
                 }
             }
         }
+    }
+    loadJob.invokeOnCompletion {
+        initialCatalogLoadsInFlight.remove(loadKey)
     }
     registerCatalogLoadJob(loadJob)
 }

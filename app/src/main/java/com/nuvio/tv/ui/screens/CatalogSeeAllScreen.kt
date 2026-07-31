@@ -46,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.tv.material3.ExperimentalTvMaterial3Api
+import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
@@ -79,6 +80,7 @@ fun CatalogSeeAllScreen(
     val posterOptionsController = searchViewModel?.posterOptions ?: posterOptionsViewModel.controller
     val uiState by viewModel.uiState.collectAsState()
     val fullCatalogRows by viewModel.fullCatalogRows.collectAsState()
+    val catalogLoadErrors by viewModel.catalogLoadErrors.collectAsState()
     val computedHeightDp = (uiState.posterCardWidthDp * 1.5f).roundToInt()
     val posterCardStyle = PosterCardStyle(
         width = uiState.posterCardWidthDp.dp,
@@ -105,10 +107,11 @@ fun CatalogSeeAllScreen(
         it.legacyKey() == catalogKey
     }
     val catalogRow = if (isSearchMode) searchCatalogRow else homeCatalogRow
+    val catalogLoadError = if (isSearchMode) null else catalogLoadErrors[catalogKey]
 
     LaunchedEffect(catalogKey, isSearchMode, catalogRow != null) {
         if (!isSearchMode && catalogRow == null) {
-            viewModel.requestLazyCatalogLoad(catalogKey)
+            viewModel.requestCatalogLoad(addonId, type, catalogId)
         }
     }
 
@@ -204,7 +207,8 @@ fun CatalogSeeAllScreen(
         Spacer(modifier = Modifier.height(NuvioTheme.spacing.xl))
 
         val hasItems = catalogRow?.items?.isNotEmpty() == true
-        val isCatalogLoading = catalogRow == null || catalogRow.isLoading
+        val isCatalogLoading = (catalogRow == null && catalogLoadError == null) ||
+            catalogRow?.isLoading == true
 
         if (hasItems) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -302,6 +306,37 @@ fun CatalogSeeAllScreen(
                             }
                         }
                     }
+                }
+            }
+        } else if (catalogLoadError != null) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.catalog_see_all_error_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = NuvioTheme.colors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+                Text(
+                    text = catalogLoadError,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = NuvioTheme.colors.TextSecondary
+                )
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
+                Button(
+                    onClick = {
+                        viewModel.requestCatalogLoad(
+                            addonId = addonId,
+                            type = type,
+                            catalogId = catalogId,
+                            forceRetry = true
+                        )
+                    }
+                ) {
+                    Text(stringResource(R.string.catalog_see_all_retry))
                 }
             }
         } else if (isCatalogLoading) {

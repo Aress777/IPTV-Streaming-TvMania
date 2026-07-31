@@ -142,6 +142,8 @@ internal fun HomeViewModel.clearCatalogData() {
         placeholderDescriptors.clear()
     }
     lazyLoadRequestedKeys.clear()
+    initialCatalogLoadsInFlight.clear()
+    _catalogLoadErrors.value = emptyMap()
 }
 
 internal fun HomeViewModel.snapshotCatalogKeys(): Set<String> = synchronized(catalogStateLock) {

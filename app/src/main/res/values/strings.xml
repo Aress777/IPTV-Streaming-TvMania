@@ -1938,6 +1938,8 @@
     <string name="catalog_see_all_from">from %1$s</string>
     <string name="catalog_see_all_empty_title">No items available</string>
     <string name="catalog_see_all_empty_subtitle">Try a different catalog or check back later</string>
+    <string name="catalog_see_all_error_title">Catalog unavailable</string>
+    <string name="catalog_see_all_retry">Retry</string>
 
     <string name="layout_selection_welcome">Welcome to Nuvio</string>
     <string name="layout_selection_subtitle">Choose your home screen layout</string>
