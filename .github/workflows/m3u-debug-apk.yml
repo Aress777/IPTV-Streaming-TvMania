@@ -19,16 +19,16 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v6
-      - name: Create optional local configuration
+      - name: Create release configuration
         run: |
-          cat > local.dev.properties <<'EOF'
+          cat > local.properties <<'EOF'
           NUVIO_SUPABASE_URL=https://api.nuvio.tv
           NUVIO_SUPABASE_ANON_KEY=sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN
           TV_LOGIN_WEB_BASE_URL=https://nuvio.tv/tv-login
           TRAKT_CLIENT_ID=${{ secrets.TRAKT_CLIENT_ID }}
           TRAKT_CLIENT_SECRET=${{ secrets.TRAKT_CLIENT_SECRET }}
+          CI_USE_DEBUG_SIGNING=true
           EOF
-          touch local.properties
       - name: Create CI debug signing key
         run: |
           keytool -genkeypair -v \
@@ -39,12 +39,12 @@ jobs:
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
-            -dname "CN=NuvioTV M3U CI, OU=Android TV, O=Nuvio, L=Bucharest, C=RO"
-      - name: Build debug APK
-        run: ./gradlew :app:assembleFullDebug --stacktrace
+            -dname "CN=TvMania CI, OU=Android TV, O=TvMania, L=Bucharest, C=RO"
+      - name: Build release APK
+        run: ./gradlew :app:assembleFullRelease --stacktrace
       - uses: actions/upload-artifact@v6
         with:
-          name: tvmania-debug-apk
-          path: app/build/outputs/apk/full/debug/*.apk
+          name: tvmania-apk
+          path: app/build/outputs/apk/full/release/*.apk
           if-no-files-found: error
           retention-days: 14

@@ -328,7 +328,7 @@
     <string name="about_licenses_attributions">רישיונות וקרדיטים</string>
     <string name="about_licenses_attributions_subtitle">מקורות מידע, תודות ורישיונות Android</string>
     <string name="licenses_attributions_title">רישיונות וקרדיטים</string>
-    <string name="licenses_attributions_subtitle">ספקי מידע, קרדיטים לשירותים ורישיונות הפעלת Android שבהם משתמשת Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">ספקי מידע, קרדיטים לשירותים ורישיונות הפעלת Android שבהם משתמשת TvMania.</string>
     <string name="licenses_attributions_section_app">רישיון האפליקציה</string>
     <string name="licenses_attributions_section_data">מידע ושירותים</string>
     <string name="licenses_attributions_section_playback">רישיונות הפעלת Android</string>
@@ -1987,7 +1987,7 @@
     <string name="autoplay_regex_preset_english">אנגלית</string>
     <string name="autoplay_regex_preset_no_cam_ts">ללא CAM/TS</string>
     <string name="autoplay_regex_preset_no_remux_hdr">ללא REMUX/HDR</string>
-    <string name="playback_player_internal_desc">השתמש בנגן המובנה של NuvioTV</string>
+    <string name="playback_player_internal_desc">השתמש בנגן המובנה של TvMania</string>
     <string name="player_torrent_peer_info">%1$d מקורות · %2$d עמיתים</string>
     <string name="player_torrent_stats">%1$d עמיתים · %2$d מקורות · %3$d%%</string>
     <string name="player_torrent_connecting_peers">מתחבר לעמיתים\u2026</string>

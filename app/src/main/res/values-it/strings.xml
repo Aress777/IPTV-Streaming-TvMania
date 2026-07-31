@@ -1,5 +1,5 @@
 <resources>
-<string name="app_name">Nuvio</string>
+<string name="app_name">TvMania</string>
 <string name="type_movie">Film</string>
 <string name="type_series">Serie TV</string>
 <string name="type_unknown">Sconosciuto</string>
@@ -1488,7 +1488,7 @@
 <string name="cd_preview">Anteprima</string>
 <string name="cd_test">Test</string>
 <string name="cd_unlink">Scollega</string>
-<string name="cd_nuvio_logo">NuvioTV</string>
+<string name="cd_nuvio_logo">TvMania</string>
 <string name="cd_trakt_logo">Logo Trakt</string>
 <string name="cd_trakt_qr">QR attivazione Trakt</string>
 <string name="cd_imdb">IMDb</string>
@@ -1499,7 +1499,7 @@
 <string name="cd_expand">Espandi %1$s</string>
 <string name="cd_collapse">Riduci %1$s</string>
 <string name="cd_qr_login">Codice QR login</string>
-<string name="cd_nuvio">Nuvio</string>
+<string name="cd_nuvio">TvMania</string>
 
     <!-- Debug -->
 <string name="debug_signin_success">Accesso eseguito correttamente</string>
@@ -1937,11 +1937,11 @@
   <string name="about_licenses_attributions">Licenze e attribuzioni</string>
   <string name="about_licenses_attributions_subtitle">Sorgenti dati, ringraziamenti e licenze Android</string>
   <string name="licenses_attributions_title">Licenze e attribuzioni</string>
-  <string name="licenses_attributions_subtitle">Fornitori di dati, crediti dei servizi e licenze di riproduzione Android utilizzate da Nuvio TV.</string>
+  <string name="licenses_attributions_subtitle">Fornitori di dati, crediti dei servizi e licenze di riproduzione Android utilizzate da TvMania.</string>
   <string name="licenses_attributions_section_app">LICENZA APP</string>
   <string name="licenses_attributions_section_data">DATI E SERVIZI</string>
   <string name="licenses_attributions_section_playback">LICENZE DI RIPRODUZIONE ANDROID</string>
-  <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+  <string name="licenses_attributions_nuvio_title">TvMania</string>
   <string name="licenses_attributions_nuvio_body">Il codice sorgente e i termini della licenza sono disponibili nel repository del progetto. Distribuito sotto licenza GNU General Public License v3.0.</string>
   <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
   <string name="licenses_attributions_tmdb_body">Nuvio utilizza l\'API di TMDB per metadati di film e serie TV, locandine, trailer, cast, dettagli di produzione, collezioni e raccomandazioni. Questo prodotto utilizza l\'API di TMDB ma non è approvato o certificato da TMDB.</string>
@@ -2078,7 +2078,7 @@
   <string name="autoplay_regex_preset_english">Inglese</string>
   <string name="autoplay_regex_preset_no_cam_ts">No CAM/TS</string>
   <string name="autoplay_regex_preset_no_remux_hdr">No REMUX/HDR</string>
-  <string name="playback_player_internal_desc">Usa il lettore integrato di NuvioTV</string>
+  <string name="playback_player_internal_desc">Usa il lettore integrato di TvMania</string>
   <string name="player_torrent_peer_info">%1$d seed · %2$d peer</string>
   <string name="player_torrent_buffered_status">%1$s bufferizzati · %2$s · %3$s</string>
   <string name="player_torrent_status">%1$s · %2$s</string>

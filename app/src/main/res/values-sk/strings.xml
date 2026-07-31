@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="tv_channel_continue_watching">Pokračovať v sledovaní</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmy</string>
@@ -350,11 +350,11 @@
     <string name="about_licenses_attributions">Licencie a atribúcie</string>
     <string name="about_licenses_attributions_subtitle">Zdroje dát, poďakovania a Android licencie</string>
     <string name="licenses_attributions_title">Licencie a atribúcie</string>
-    <string name="licenses_attributions_subtitle">Poskytovatelia dát, servisné kredity a Android licencie prehrávania používané Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">Poskytovatelia dát, servisné kredity a Android licencie prehrávania používané TvMania.</string>
     <string name="licenses_attributions_section_app">LICENCIA APLIKÁCIE</string>
     <string name="licenses_attributions_section_data">DÁT A SLUŽBY</string>
     <string name="licenses_attributions_section_playback">ANDROID LICENCIE PREHRÁVANIA</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+    <string name="licenses_attributions_nuvio_title">TvMania</string>
     <string name="licenses_attributions_nuvio_body">Zdrojový kód a licenčné podmienky sú dostupné v repozitári projektu. Licencované pod GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio používa TMDB API pre metadáta filmov a TV, grafiku, trailery, obsadenie, produkčné detaily, kolekcie a odporúčania. Tento produkt používa TMDB API, ale nie je schválený ani certifikovaný TMDB.</string>
@@ -1966,7 +1966,7 @@
     <string name="cd_preview">Náhľad</string>
     <string name="cd_test">Testovať</string>
     <string name="cd_unlink">Odpojiť</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Logo Trakt</string>
     <string name="cd_trakt_qr">Trakt aktivačné QR</string>
     <string name="cd_imdb">IMDb</string>
@@ -1977,7 +1977,7 @@
     <string name="cd_expand">Rozbaliť %1$s</string>
     <string name="cd_collapse">Zbaliť %1$s</string>
     <string name="cd_qr_login">QR prihlasovací kód</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
 
     <!-- Debug -->
     <string name="debug_signin_success">Úspešne prihlásený</string>
@@ -2293,7 +2293,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">Bez REMUX/HDR</string>
 
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">Použiť vstavaný prehrávač NuvioTV</string>
+    <string name="playback_player_internal_desc">Použiť vstavaný prehrávač TvMania</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$d seedov · %2$d peerov</string>

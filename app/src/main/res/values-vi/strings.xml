@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="type_movie">Phim</string>
     <string name="type_series">Chương trình TV</string>
     <string name="type_unknown">Không xác định</string>

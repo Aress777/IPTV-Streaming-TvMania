@@ -22,8 +22,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +53,8 @@ fun LiveTvScreen(
     viewModel: LiveTvViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    var focusedUrl by remember { mutableStateOf<String?>(null) }
+    val focusedChannel = state.visibleChannels.firstOrNull { it.streamUrl == focusedUrl }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,11 +76,26 @@ fun LiveTvScreen(
                     contentPadding = PaddingValues(vertical = 2.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    item(key = LiveTvUiState.GLOBAL_FAVORITES) {
+                        Card(
+                            onClick = viewModel::selectGlobalFavorites,
+                            colors = CardDefaults.colors(
+                                containerColor = if (state.isGlobalFavoritesSelected)
+                                    NuvioTheme.colors.Primary.copy(alpha = .65f) else NuvioTheme.colors.Surface
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                                Text(stringResource(R.string.live_tv_favorites), fontSize = 12.sp)
+                                Text("${state.favoriteUrls.size} channels", fontSize = 9.sp, color = NuvioTheme.colors.TextSecondary)
+                            }
+                        }
+                    }
                     items(state.playlists, key = { it.id }) { playlist ->
                         Card(
                             onClick = { viewModel.selectPlaylist(playlist.id) },
                             colors = CardDefaults.colors(
-                                containerColor = if (state.selectedPlaylist?.id == playlist.id)
+                                containerColor = if (!state.isGlobalFavoritesSelected && state.selectedPlaylist?.id == playlist.id)
                                     NuvioTheme.colors.Primary.copy(alpha = .65f) else NuvioTheme.colors.Surface
                             ),
                             modifier = Modifier.fillMaxWidth()
@@ -89,7 +115,6 @@ fun LiveTvScreen(
                     items(state.groups, key = { it }) { group ->
                         val label = when (group) {
                             LiveTvUiState.ALL_CHANNELS -> stringResource(R.string.live_tv_all_channels)
-                            LiveTvUiState.FAVORITES -> stringResource(R.string.live_tv_favorites)
                             else -> group
                         }
                         Card(
@@ -102,21 +127,29 @@ fun LiveTvScreen(
                         ) { Text(label, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp)) }
                     }
                 }
-                LazyColumn(
-                    modifier = Modifier.weight(1f).fillMaxHeight().focusGroup(),
-                    contentPadding = PaddingValues(2.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (state.visibleChannels.isEmpty()) {
-                        item { Text(stringResource(R.string.live_tv_no_channels)) }
-                    }
-                    items(state.visibleChannels, key = { it.streamUrl }) { channel ->
-                        ChannelCard(
-                            channel = channel,
-                            favorite = channel.streamUrl in state.favoriteUrls,
-                            onClick = { viewModel.resolveForPlayback(channel, onPlayChannel) },
-                            onFavorite = { viewModel.toggleFavorite(channel) }
-                        )
+                Column(Modifier.weight(1f).fillMaxHeight()) {
+                    EpgPanel(focusedChannel)
+                    Spacer(Modifier.size(6.dp))
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxWidth().focusGroup(),
+                        contentPadding = PaddingValues(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (state.visibleChannels.isEmpty()) {
+                            item { Text(stringResource(R.string.live_tv_no_channels)) }
+                        }
+                        items(state.visibleChannels, key = { it.streamUrl }) { channel ->
+                            ChannelCard(
+                                channel = channel,
+                                favorite = channel.streamUrl in state.favoriteUrls,
+                                onClick = { viewModel.resolveForPlayback(channel, onPlayChannel) },
+                                onFavorite = { viewModel.toggleFavorite(channel) },
+                                onFocused = {
+                                    focusedUrl = channel.streamUrl
+                                    viewModel.refreshEpg(channel)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -129,11 +162,20 @@ private fun ChannelCard(
     channel: LiveTvChannel,
     favorite: Boolean,
     onClick: () -> Unit,
-    onFavorite: () -> Unit
+    onFavorite: () -> Unit,
+    onFocused: () -> Unit
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { if (it.isFocused) onFocused() }
+            .onPreviewKeyEvent {
+                if (it.type == KeyEventType.KeyDown && it.key == Key.DirectionRight) {
+                    onFavorite()
+                    true
+                } else false
+            }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp),
@@ -169,5 +211,30 @@ private fun ChannelCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EpgPanel(channel: LiveTvChannel?) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(NuvioTheme.colors.Surface)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+            Text("EPG • ${channel?.name ?: "select a channel"}", fontSize = 12.sp, color = NuvioTheme.colors.Primary)
+            Text(
+                "NOW  ${channel?.epgNow ?: "No programme information"}",
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                "NEXT  ${channel?.epgNext ?: "—"}",
+                fontSize = 10.sp,
+                color = NuvioTheme.colors.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
     }
 }

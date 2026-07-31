@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="tv_channel_continue_watching">Continuar a ver</string>
     <string name="type_movie">Filme</string>
     <string name="type_movies">Filmes</string>
@@ -324,11 +324,11 @@
     <string name="about_licenses_attributions">Licenças e atribuição</string>
     <string name="about_licenses_attributions_subtitle">Fontes de dados, agradecimentos e licenças Android</string>
     <string name="licenses_attributions_title">Licenças e atribuição</string>
-    <string name="licenses_attributions_subtitle">Fornecedores de dados, créditos de serviços e licenças de reprodução Android utilizadas pelo Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">Fornecedores de dados, créditos de serviços e licenças de reprodução Android utilizadas pelo TvMania.</string>
     <string name="licenses_attributions_section_app">LICENÇA DA APP</string>
     <string name="licenses_attributions_section_data">DADOS E SERVIÇOS</string>
     <string name="licenses_attributions_section_playback">LICENÇAS DE REPRODUÇÃO ANDROID</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+    <string name="licenses_attributions_nuvio_title">TvMania</string>
     <string name="licenses_attributions_nuvio_body">O código-fonte e os termos da licença estão disponíveis no repositório do projeto. Licenciado sob a GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">O Nuvio utiliza a API do TMDB para metadados de filmes e séries, imagens, trailers, elenco, detalhes de produção, coleções e recomendações. Este produto utiliza a API do TMDB, mas não é endossado nem certificado pelo TMDB.</string>
@@ -1919,7 +1919,7 @@
     <string name="cd_preview">Visualização</string>
     <string name="cd_test">Testar</string>
     <string name="cd_unlink">Desassociar</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Logótipo do Trakt</string>
     <string name="cd_trakt_qr">QR de ativação do Trakt</string>
     <string name="cd_imdb">IMDb</string>
@@ -1930,7 +1930,7 @@
     <string name="cd_expand">Expandir %1$s</string>
     <string name="cd_collapse">Recolher %1$s</string>
     <string name="cd_qr_login">Código QR de início de sessão</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
     <string name="debug_signin_success">Sessão iniciada com sucesso</string>
     <string name="debug_generate_description">Item %1$s nº %2$d gerado por debug</string>
     <string name="debug_generate_result_failed">Falhou: %1$s</string>
@@ -2239,7 +2239,7 @@
     <string name="autoplay_regex_preset_no_cam_ts">Sem CAM/TS</string>
     <string name="autoplay_regex_preset_no_remux_hdr">Sem REMUX/HDR</string>
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">Utilizar o leitor interno do NuvioTV</string>
+    <string name="playback_player_internal_desc">Utilizar o leitor interno do TvMania</string>
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$d seeds · %2$d peers</string>
     <string name="player_torrent_buffered_status">%1$s em buffer · %2$s · %3$s</string>

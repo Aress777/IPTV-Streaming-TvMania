@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="tv_channel_continue_watching">繼續觀看</string>
     <string name="type_movie">電影</string>
     <string name="type_movies">電影</string>
@@ -347,11 +347,11 @@
     <string name="about_licenses_attributions">授權與出處</string>
     <string name="about_licenses_attributions_subtitle">資料來源、致謝與 Android 授權</string>
     <string name="licenses_attributions_title">授權與出處</string>
-    <string name="licenses_attributions_subtitle">Nuvio TV 使用的資料提供者、服務致謝與 Android 播放授權。</string>
+    <string name="licenses_attributions_subtitle">TvMania 使用的資料提供者、服務致謝與 Android 播放授權。</string>
     <string name="licenses_attributions_section_app">應用程式授權</string>
     <string name="licenses_attributions_section_data">資料與服務</string>
     <string name="licenses_attributions_section_playback">Android 播放授權</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+    <string name="licenses_attributions_nuvio_title">TvMania</string>
     <string name="licenses_attributions_nuvio_body">原始碼和授權條款可在專案倉庫中取得。基於 GNU General Public License v3.0 授權。</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio 使用 TMDB API 獲取電影和電視節目的中繼資料、美術圖、預告片、演員、製作細節、收藏和推薦內容。本產品使用 TMDB API，但未經 TMDB 認可或認證。</string>
@@ -2083,7 +2083,7 @@
     <string name="cd_preview">預覽</string>
     <string name="cd_test">測試</string>
     <string name="cd_unlink">取消連結</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Trakt 標誌</string>
     <string name="cd_trakt_qr">Trakt 啟用 QR</string>
     <string name="cd_imdb">IMDb</string>
@@ -2094,7 +2094,7 @@
     <string name="cd_expand">展開 %1$s</string>
     <string name="cd_collapse">摺疊 %1$s</string>
     <string name="cd_qr_login">QR 碼登入</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
 
     <string name="debug_signin_success">登入成功</string>
     <string name="debug_generate_description">除錯產生的 %1$s 項目 #%2$d</string>
@@ -2409,7 +2409,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">無 REMUX/HDR</string>
 
     <!-- 播放設定區段 -->
-    <string name="playback_player_internal_desc">使用 NuvioTV 的內建播放器</string>
+    <string name="playback_player_internal_desc">使用 TvMania 的內建播放器</string>
 
     <!-- 播放器執行時期：torrent 覆蓋層 + 音軌 -->
     <string name="player_torrent_peer_info">%1$d 個種子 · %2$d 個對等節點</string>

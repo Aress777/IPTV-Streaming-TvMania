@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="type_movie">Фильм</string>
     <string name="type_series">Сериал</string>
     <string name="type_unknown">Неизвестно</string>
@@ -1414,7 +1414,7 @@
     <string name="cd_preview">Предпросмотр</string>
     <string name="cd_test">Тест</string>
     <string name="cd_unlink">Отвязать</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Логотип Trakt</string>
     <string name="cd_trakt_qr">QR-код активации Trakt</string>
     <string name="cd_imdb">IMDb</string>
@@ -1425,7 +1425,7 @@
     <string name="cd_expand">Развернуть %1$s</string>
     <string name="cd_collapse">Свернуть %1$s</string>
     <string name="cd_qr_login">QR-код входа</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
 
     <!-- Debug -->
     <string name="debug_signin_success">Вход успешно выполнен</string>
@@ -1599,11 +1599,11 @@
     <string name="about_licenses_attributions">Лицензии и указание авторства</string>
     <string name="about_licenses_attributions_subtitle">Источники данных, благодарности и лицензии Android</string>
     <string name="licenses_attributions_title">Лицензии и указание авторства</string>
-    <string name="licenses_attributions_subtitle">Поставщики данных, кредиты сервисов и лицензии воспроизведения Android, используемые Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">Поставщики данных, кредиты сервисов и лицензии воспроизведения Android, используемые TvMania.</string>
     <string name="licenses_attributions_section_app">ЛИЦЕНЗИЯ ПРИЛОЖЕНИЯ</string>
     <string name="licenses_attributions_section_data">ДАННЫЕ И СЕРВИСЫ</string>
     <string name="licenses_attributions_section_playback">ЛИЦЕНЗИИ ВОСПРОИЗВЕДЕНИЯ ANDROID</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+    <string name="licenses_attributions_nuvio_title">TvMania</string>
     <string name="licenses_attributions_nuvio_body">Исходный код и условия лицензии доступны в репозитории проекта. Лицензировано под GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio использует API TMDB для метаданных фильмов и ТВ, иллюстраций, трейлеров, актёров, производственных деталей, коллекций и рекомендаций. Этот продукт использует API TMDB, но не одобрен и не сертифицирован TMDB.</string>
@@ -2314,7 +2314,7 @@
     <string name="autoplay_regex_preset_english">Английский</string>
     <string name="autoplay_regex_preset_no_cam_ts">Без CAM/TS</string>
     <string name="autoplay_regex_preset_no_remux_hdr">Без REMUX/HDR</string>
-    <string name="playback_player_internal_desc">Использовать встроенный плеер NuvioTV</string>
+    <string name="playback_player_internal_desc">Использовать встроенный плеер TvMania</string>
     <string name="player_torrent_peer_info">%1$d сидов · %2$d пиров</string>
     <string name="player_torrent_buffered_status">%1$s буфер · %2$s · %3$s</string>
     <string name="player_torrent_status">%1$s · %2$s</string>

@@ -44,6 +44,11 @@ class LiveTvViewModel @Inject constructor(
         }
         refreshVisibleEpg()
     }
+    fun selectGlobalFavorites() {
+        _uiState.update {
+            it.copy(selectedPlaylistId = LiveTvUiState.GLOBAL_FAVORITES, selectedGroup = LiveTvUiState.ALL_CHANNELS)
+        }
+    }
     fun selectGroup(group: String) {
         _uiState.update { it.copy(selectedGroup = group) }
         refreshVisibleEpg()
@@ -56,6 +61,36 @@ class LiveTvViewModel @Inject constructor(
         }
         preferences.edit().putStringSet(KEY_FAVORITES, favorites).apply()
         _uiState.update { it.copy(favoriteUrls = favorites) }
+    }
+
+    fun refreshEpg(channel: LiveTvChannel) {
+        val playlist = _uiState.value.playlists.firstOrNull { saved ->
+            saved.channels.any { it.streamUrl == channel.streamUrl }
+        } ?: return
+        if (playlist.type != LiveTvPlaylistType.XTREAM || channel.remoteId == null) return
+        val username = playlist.username ?: return
+        val password = playlist.password ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val update = runCatching {
+                val listings = xtreamRequest(
+                    playlist.sourceUrl, username, password, "get_short_epg", channel.remoteId
+                ).optJSONArray("epg_listings") ?: JSONArray()
+                decodeEpgText(listings.optJSONObject(0)?.optString("title").orEmpty()) to
+                    decodeEpgText(listings.optJSONObject(1)?.optString("title").orEmpty())
+            }.getOrNull() ?: return@launch
+            withContext(Dispatchers.Main) {
+                val refreshed = _uiState.value.playlists.map { saved ->
+                    if (saved.id != playlist.id) saved else saved.copy(channels = saved.channels.map {
+                        if (it.streamUrl == channel.streamUrl) it.copy(
+                            epgNow = update.first.takeIf(String::isNotBlank),
+                            epgNext = update.second.takeIf(String::isNotBlank)
+                        ) else it
+                    })
+                }
+                persist(refreshed)
+                _uiState.update { it.copy(playlists = refreshed) }
+            }
+        }
     }
 
     fun savePlaylist(name: String, sourceUrl: String, existingId: String? = null) {

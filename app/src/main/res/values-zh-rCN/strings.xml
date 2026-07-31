@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="tv_channel_continue_watching">继续观看</string>
     <string name="type_movie">电影</string>
     <string name="type_movies">电影</string>
@@ -347,11 +347,11 @@
     <string name="about_licenses_attributions">许可与出处</string>
     <string name="about_licenses_attributions_subtitle">数据来源、致谢与 Android 许可</string>
     <string name="licenses_attributions_title">许可与出处</string>
-    <string name="licenses_attributions_subtitle">Nuvio TV 使用的数据提供者、服务致谢与 Android 播放许可。</string>
+    <string name="licenses_attributions_subtitle">TvMania 使用的数据提供者、服务致谢与 Android 播放许可。</string>
     <string name="licenses_attributions_section_app">应用许可</string>
     <string name="licenses_attributions_section_data">数据与服务</string>
     <string name="licenses_attributions_section_playback">Android 播放许可</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+    <string name="licenses_attributions_nuvio_title">TvMania</string>
     <string name="licenses_attributions_nuvio_body">源代码和许可条款可在项目仓库中获取。基于 GNU General Public License v3.0 许可。</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">Nuvio 使用 TMDB API 获取电影和电视节目的元数据、美术图、预告片、演员、制作细节、收藏和推荐内容。本产品使用 TMDB API，但未经 TMDB 认可或认证。</string>
@@ -2083,7 +2083,7 @@
     <string name="cd_preview">预览</string>
     <string name="cd_test">测试</string>
     <string name="cd_unlink">取消链接</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Trakt 标志</string>
     <string name="cd_trakt_qr">Trakt 启用 QR</string>
     <string name="cd_imdb">IMDb</string>
@@ -2094,7 +2094,7 @@
     <string name="cd_expand">展开 %1$s</string>
     <string name="cd_collapse">折叠 %1$s</string>
     <string name="cd_qr_login">QR 码登录</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
 
     <string name="debug_signin_success">登录成功</string>
     <string name="debug_generate_description">调试生成的 %1$s 项目 #%2$d</string>
@@ -2409,7 +2409,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">无 REMUX/HDR</string>
 
     <!-- 播放设置区段 -->
-    <string name="playback_player_internal_desc">使用 NuvioTV 的内置播放器</string>
+    <string name="playback_player_internal_desc">使用 TvMania 的内置播放器</string>
 
     <!-- 播放器运行时：torrent 覆盖层 + 音轨 -->
     <string name="player_torrent_peer_info">%1$d 个种子 · %2$d 个对等节点</string>

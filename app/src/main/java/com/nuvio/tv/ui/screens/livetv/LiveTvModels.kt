@@ -36,20 +36,24 @@ data class LiveTvUiState(
     val isLoading: Boolean = false,
     val error: String? = null
 ) {
+    val isGlobalFavoritesSelected: Boolean
+        get() = selectedPlaylistId == GLOBAL_FAVORITES
     val selectedPlaylist: LiveTvPlaylist?
-        get() = playlists.firstOrNull { it.id == selectedPlaylistId } ?: playlists.firstOrNull()
+        get() = if (isGlobalFavoritesSelected) null
+        else playlists.firstOrNull { it.id == selectedPlaylistId } ?: playlists.firstOrNull()
     val groups: List<String>
-        get() = listOf(ALL_CHANNELS, FAVORITES) +
+        get() = if (isGlobalFavoritesSelected) listOf(ALL_CHANNELS) else listOf(ALL_CHANNELS) +
             selectedPlaylist?.channels.orEmpty().map { it.group.ifBlank { "Other" } }.distinct().sorted()
     val visibleChannels: List<LiveTvChannel>
-        get() = when (selectedGroup) {
+        get() = if (isGlobalFavoritesSelected) {
+            playlists.flatMap { it.channels }.filter { it.streamUrl in favoriteUrls }.distinctBy { it.streamUrl }
+        } else when (selectedGroup) {
             ALL_CHANNELS -> selectedPlaylist?.channels.orEmpty()
-            FAVORITES -> selectedPlaylist?.channels.orEmpty().filter { it.streamUrl in favoriteUrls }
             else -> selectedPlaylist?.channels.orEmpty().filter { it.group.ifBlank { "Other" } == selectedGroup }
         }
 
     companion object {
         const val ALL_CHANNELS = "__all__"
-        const val FAVORITES = "__favorites__"
+        const val GLOBAL_FAVORITES = "__global_favorites__"
     }
 }

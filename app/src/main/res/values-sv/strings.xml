@@ -1224,7 +1224,7 @@
     <string name="playback_player_auto_desc">ExoPlayer för filmer och serier · MPV för anime</string>
 
     <!-- App name -->
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
 
     <!-- WebConfigServers -->
     <string name="web_manage_addons_title">Hantera tillägg</string>
@@ -1533,7 +1533,7 @@
     <string name="cd_preview">Förhandsvisning</string>
     <string name="cd_test">Testa</string>
     <string name="cd_unlink">Avlänka</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Trakt-logotyp</string>
     <string name="cd_trakt_qr">Trakt-aktiverings-QR</string>
     <string name="cd_imdb">IMDb</string>
@@ -1544,7 +1544,7 @@
     <string name="cd_expand">Expandera %1$s</string>
     <string name="cd_collapse">Fäll ihop %1$s</string>
     <string name="cd_qr_login">QR-inloggningskod</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
 
     <!-- Debug -->
     <string name="debug_signin_success">Inloggad</string>

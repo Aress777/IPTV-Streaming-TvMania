@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="tv_channel_continue_watching">Megtekintés folytatása</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmek</string>
@@ -337,11 +337,11 @@
     <string name="about_licenses_attributions">Licencek és forrásmegjelölések</string>
     <string name="about_licenses_attributions_subtitle">Adatforrások, köszönetnyilvánítások és Android licencek</string>
     <string name="licenses_attributions_title">Licencek és forrásmegjelölések</string>
-    <string name="licenses_attributions_subtitle">A Nuvio TV által használt adatszolgáltatók, szolgáltatási köszönetnyilvánítások és Android lejátszási licencek.</string>
+    <string name="licenses_attributions_subtitle">A TvMania által használt adatszolgáltatók, szolgáltatási köszönetnyilvánítások és Android lejátszási licencek.</string>
     <string name="licenses_attributions_section_app">ALKALMAZÁS LICENC</string>
     <string name="licenses_attributions_section_data">ADATOK ÉS SZOLGÁLTATÁSOK</string>
     <string name="licenses_attributions_section_playback">ANDROID LEJÁTSZÁSI LICENCEK</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+    <string name="licenses_attributions_nuvio_title">TvMania</string>
     <string name="licenses_attributions_nuvio_body">A forráskód és a licencfeltételek elérhetők a projekt tárolójában. Licenc: GNU General Public License v3.0.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_tmdb_body">A Nuvio a TMDB API-t használja a filmek és tévéműsorok metaadataihoz, borítóképekhez, előzetesekhez, stáblistákhoz, gyártási adatokhoz, gyűjteményekhez és ajánlásokhoz. Ez a termék a TMDB API-t használja, de a TMDB nem támogatja és nem hagyta jóvá.</string>
@@ -1987,7 +1987,7 @@
     <string name="cd_preview">Előnézet</string>
     <string name="cd_test">Tesztelés</string>
     <string name="cd_unlink">Leválasztás</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Trakt logó</string>
     <string name="cd_trakt_qr">Trakt aktivációs QR-kód</string>
     <string name="cd_imdb">IMDb</string>
@@ -1998,7 +1998,7 @@
     <string name="cd_expand">Kibontás: %1$s</string>
     <string name="cd_collapse">Összecsukás: %1$s</string>
     <string name="cd_qr_login">QR-kódos bejelentkezés</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
 
     <string name="debug_signin_success">Sikeres bejelentkezés</string>
     <string name="debug_generate_description">Debug-generált %1$s elem #%2$d</string>
@@ -2313,7 +2313,7 @@
     <string name="autoplay_regex_preset_no_remux_hdr">Nincs REMUX/HDR</string>
 
     <!-- Playback settings sections -->
-    <string name="playback_player_internal_desc">A NuvioTV beépített lejátszójának használata</string>
+    <string name="playback_player_internal_desc">A TvMania beépített lejátszójának használata</string>
 
     <!-- Player runtime: torrent overlay + tracks -->
     <string name="player_torrent_peer_info">%1$d seed · %2$d peer</string>

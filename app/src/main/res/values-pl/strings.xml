@@ -1307,7 +1307,7 @@
     <string name="genre_war_politics">Wojna i polityka</string>
     <string name="genre_western">Western</string>
 
-    <string name="app_name">Nuvio</string>
+    <string name="app_name">TvMania</string>
     <string name="type_unknown">Nieznany</string>
 
     <string name="cd_play">Odtwórz</string>
@@ -1339,7 +1339,7 @@
     <string name="cd_preview">Podgląd</string>
     <string name="cd_test">Test</string>
     <string name="cd_unlink">Odłącz</string>
-    <string name="cd_nuvio_logo">NuvioTV</string>
+    <string name="cd_nuvio_logo">TvMania</string>
     <string name="cd_trakt_logo">Logo Trakt</string>
     <string name="cd_trakt_qr">Kod QR aktywacji Trakt</string>
     <string name="cd_imdb">IMDb</string>
@@ -1350,7 +1350,7 @@
     <string name="cd_expand">Rozwiń %1$s</string>
     <string name="cd_collapse">Zwiń %1$s</string>
     <string name="cd_qr_login">Kod QR logowania</string>
-    <string name="cd_nuvio">Nuvio</string>
+    <string name="cd_nuvio">TvMania</string>
 
     <string name="account_signin_create_title">Zaloguj się / Utwórz konto</string>
     <string name="account_signin_create_desc">Użyj adresu e-mail i hasła, aby utworzyć lub zalogować się na konto.</string>
@@ -2149,17 +2149,17 @@
     <string name="licenses_attributions_mdblist_body">Nuvio korzysta z MDBList do ocen i danych zewnętrznych dostawców wyników. Nuvio nie jest powiązane z MDBList.</string>
     <string name="licenses_attributions_mdblist_title">MDBList</string>
     <string name="licenses_attributions_nuvio_body">Kod źródłowy i warunki licencji są dostępne w repozytorium projektu. Licencjonowane na GNU General Public License v3.0.</string>
-    <string name="licenses_attributions_nuvio_title">Nuvio TV</string>
+    <string name="licenses_attributions_nuvio_title">TvMania</string>
     <string name="licenses_attributions_section_app">LICENCJA APLIKACJI</string>
     <string name="licenses_attributions_section_data">DANE I USŁUGI</string>
     <string name="licenses_attributions_section_playback">LICENCJE ODTWARZANIA ANDROID</string>
-    <string name="licenses_attributions_subtitle">Dostawcy danych, podziękowania i licencje odtwarzania Android używane przez Nuvio TV.</string>
+    <string name="licenses_attributions_subtitle">Dostawcy danych, podziękowania i licencje odtwarzania Android używane przez TvMania.</string>
     <string name="licenses_attributions_title">Licencje i atrybucje</string>
     <string name="licenses_attributions_tmdb_body">Nuvio korzysta z API TMDB do metadanych filmów i seriali, grafik, zwiastunów, obsady, szczegółów produkcji, kolekcji i rekomendacji. Ten produkt korzysta z API TMDB, ale nie jest zatwierdzony ani certyfikowany przez TMDB.</string>
     <string name="licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="licenses_attributions_trakt_body">Nuvio łączy się z Trakt w celu uwierzytelniania konta, historii obejrzanych, synchronizacji postępu, danych biblioteki, ocen, list i komentarzy. Nuvio nie jest powiązane z Trakt.</string>
     <string name="licenses_attributions_trakt_title">Trakt</string>
-    <string name="playback_player_internal_desc">Użyj wbudowanego odtwarzacza NuvioTV</string>
+    <string name="playback_player_internal_desc">Użyj wbudowanego odtwarzacza TvMania</string>
     <string name="player_error_decoder">Błąd dekodera</string>
     <string name="player_error_initialize_failed">Nie udało się zainicjalizować odtwarzacza</string>
     <string name="player_error_mpv_playback_failed">Nie udało się zainicjalizować odtwarzania libmpv</string>
